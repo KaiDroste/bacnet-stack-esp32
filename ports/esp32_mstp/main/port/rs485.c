@@ -31,7 +31,7 @@
 // #include "hardware.h" //STM 32 specifc
 #include "bacnet/basic/sys/mstimer.h"
 #include "bacnet/bits.h"
-#include "bacnet/basic/sys/fifo.h"
+// #include "bacnet/basic/sys/fifo.h"
 #include "led.h"
 #include "rs485.h"
 
@@ -55,8 +55,8 @@ static const char *TAG = "RS485_initalize";
 #define BUF_SIZE            (512)
 
 /* buffer for storing received bytes - size must be power of two */
-static uint8_t Receive_Buffer_Data[512];
-static FIFO_BUFFER Receive_Buffer;
+// static uint8_t Receive_Buffer_Data[512];
+// static FIFO_BUFFER Receive_Buffer;
 /* amount of silence on the wire */
 static struct mstimer Silence_Timer;
 /* baud rate */
@@ -146,20 +146,20 @@ bool rs485_receive_error(void)
 * @return
 *None
 **********************************************************************/
-/****STM32 Specific*********/ //Changed for ES32 void USART2_IRQHandler(void)
-void Receive_Task(void)
-{
-   uint8_t data_byte;
-   ESP_LOGI(TAG,"looking for uart darta");
-   uart_read_bytes(UART_NUM_1, &data_byte, 1, 100 / portTICK_RATE_MS); 
-   (void)FIFO_Put(&Receive_Buffer, data_byte);
+// /****STM32 Specific*********/ //Changed for ES32 void USART2_IRQHandler(void)
+// void Receive_Task(void)
+// {
+//    uint8_t data_byte;
+//    ESP_LOGI(TAG,"looking for uart darta");
+//    uart_read_bytes(UART_NUM_1, &data_byte, 1, 100 / portTICK_RATE_MS); 
+//    (void)FIFO_Put(&Receive_Buffer, data_byte);
 
-    // if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
-    //     /* Read one byte from the receive data register */
-    //     data_byte = USART_ReceiveData(USART2);
-    //     (void)FIFO_Put(&Receive_Buffer, data_byte);
-    // }
-}
+//     // if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
+//     //     /* Read one byte from the receive data register */
+//     //     data_byte = USART_ReceiveData(USART2);
+//     //     (void)FIFO_Put(&Receive_Buffer, data_byte);
+//     // }
+// }
 
 /*************************************************************************
  * DESCRIPTION: Return true if a byte is available
@@ -170,7 +170,7 @@ bool rs485_byte_available(uint8_t *data_register)
 {
     bool data_available = false; /* return value */
     ESP_LOGI(TAG,"RS485_DataAvailable: Look if data is aviable:%d", data_available);
-    const int len = uart_read_bytes(UART_NUM_1, &data_register, 1, 100 / portTICK_RATE_MS);
+    const int len = uart_read_bytes(UART_NUM_1, data_register, 1, 100 / portTICK_RATE_MS);
         if ( len > 0)
              {
                  // data_byte[len]= '\0';
@@ -184,7 +184,8 @@ bool rs485_byte_available(uint8_t *data_register)
              }
 
 
-    if (!FIFO_Empty(&Receive_Buffer)) {
+/*    
+     if (!FIFO_Empty(&Receive_Buffer)) {
         if (data_register) {
             *data_register = FIFO_Get(&Receive_Buffer);
             ESP_LOGI(TAG,"rs485_byte_available");
@@ -193,7 +194,7 @@ bool rs485_byte_available(uint8_t *data_register)
         data_available = true;
         led_rx_on_interval(10);
     }
-
+ */
     return data_available;
 }
 
@@ -372,8 +373,10 @@ void rs485_init(void)
     //Receive_Task();
 
 
-    FIFO_Init(&Receive_Buffer, &Receive_Buffer_Data[0],
+    /* Not neccessary any more 
+        FIFO_Init(&Receive_Buffer, &Receive_Buffer_Data[0],
         (unsigned)sizeof(Receive_Buffer_Data));
+     */
 
     rs485_silence_reset();
 }
