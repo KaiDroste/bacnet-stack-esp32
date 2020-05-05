@@ -169,7 +169,20 @@ void Receive_Task(void)
 bool rs485_byte_available(uint8_t *data_register)
 {
     bool data_available = false; /* return value */
-   ESP_LOGI(TAG,"RS485_DataAvailable: Look if data is aviable:%d", data_available);
+    ESP_LOGI(TAG,"RS485_DataAvailable: Look if data is aviable:%d", data_available);
+    const int len = uart_read_bytes(UART_NUM_1, &data_register, 1, 100 / portTICK_RATE_MS);
+        if ( len > 0)
+             {
+                 // data_byte[len]= '\0';
+                 ESP_LOGI(TAG, "Recieve: %s", data_register );
+                 fflush(stdout);
+                 
+                 rs485_silence_reset();
+                 data_available = true;
+                 led_rx_on_interval(10);
+                 
+             }
+
 
     if (!FIFO_Empty(&Receive_Buffer)) {
         if (data_register) {
