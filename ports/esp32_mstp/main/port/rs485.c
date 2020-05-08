@@ -258,7 +258,7 @@ void rs485_bytes_send(uint8_t *buffer, /* data to send */
     uint16_t nbytes)
 { /* number of bytes of data */
     uint8_t tx_byte;
-
+    ESP_LOGI(TAG, "rs485_bytes_send");
     while (nbytes) {
         /* Send the data byte */
         tx_byte = *buffer;
