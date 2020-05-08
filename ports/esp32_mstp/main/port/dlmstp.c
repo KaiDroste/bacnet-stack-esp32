@@ -49,6 +49,10 @@
 #include "port/include/automac.h"
 #include "bacnet/basic/object/device.h"
 
+#include "esp_log.h"
+
+static const char *TAG = "dlmstp:";
+
 /* This file has been customized for use with small microprocessors */
 /* Assumptions:
     Only one MS/TP datalink layer
@@ -480,8 +484,10 @@ static void MSTP_Receive_Frame_FSM(void)
                 rs485_silence_reset();
                 INCREMENT_AND_LIMIT_UINT8(EventCount);
             } else if (rs485_byte_available(&DataRegister)) {
+                ESP_LOGI(TAG, "Receive_STATE");
                 rs485_silence_reset();
                 INCREMENT_AND_LIMIT_UINT8(EventCount);
+                ESP_LOGI(TAG, "DataRegister = 0x55");
                 if (DataRegister == 0x55) {
                     /* Preamble1 */
                     /* receive the remainder of the frame. */
@@ -504,9 +510,11 @@ static void MSTP_Receive_Frame_FSM(void)
                 /* wait for the start of a frame. */
                 Receive_State = MSTP_RECEIVE_STATE_IDLE;
             } else if (rs485_byte_available(&DataRegister)) {
+                ESP_LOGI(TAG, "Receive_STATE_Premble");
                 rs485_silence_reset();
                 INCREMENT_AND_LIMIT_UINT8(EventCount);
                 if (DataRegister == 0xFF) {
+                    ESP_LOGI(TAG, "DataRegister = 0xFF");
                     /* Preamble2 */
                     Index = 0;
                     HeaderCRC = 0xFF;
@@ -543,39 +551,47 @@ static void MSTP_Receive_Frame_FSM(void)
                 /* wait for the start of a frame. */
                 Receive_State = MSTP_RECEIVE_STATE_IDLE;
             } else if (rs485_byte_available(&DataRegister)) {
+                ESP_LOGI(TAG, "Receive_STATE_HEADER");
                 rs485_silence_reset();
                 INCREMENT_AND_LIMIT_UINT8(EventCount);
                 if (Index == 0) {
+                    ESP_LOGI(TAG, "Index = 0 --> Frame Type");
                     /* FrameType */
                     HeaderCRC = CRC_Calc_Header(DataRegister, HeaderCRC);
                     FrameType = DataRegister;
                     Index = 1;
                 } else if (Index == 1) {
+                    ESP_LOGI(TAG, "Index = 1 --> Destination");
                     /* Destination */
                     HeaderCRC = CRC_Calc_Header(DataRegister, HeaderCRC);
-                    DestinationAddress = DataRegister;
+                    DestinationAddress = DataRegister;                    
                     Index = 2;
                 } else if (Index == 2) {
+                    ESP_LOGI(TAG, "Index = 2 --> Source");
                     /* Source */
                     HeaderCRC = CRC_Calc_Header(DataRegister, HeaderCRC);
                     SourceAddress = DataRegister;
                     Index = 3;
                 } else if (Index == 3) {
+                    ESP_LOGI(TAG, "Index = 3 --> Length1");
                     /* Length1 */
                     HeaderCRC = CRC_Calc_Header(DataRegister, HeaderCRC);
                     DataLength = DataRegister * 256;
                     Index = 4;
                 } else if (Index == 4) {
+                    ESP_LOGI(TAG, "Index = 4 --> Length2");
                     /* Length2 */
                     HeaderCRC = CRC_Calc_Header(DataRegister, HeaderCRC);
                     DataLength += DataRegister;
                     Index = 5;
                 } else if (Index == 5) {
+                    ESP_LOGI(TAG, "Index = 5 --> HeaderCRC");
                     /* HeaderCRC */
                     HeaderCRC = CRC_Calc_Header(DataRegister, HeaderCRC);
                     /* In the HEADER_CRC state, the node validates the CRC
                        on the fixed  message header. */
                     if (HeaderCRC != 0x55) {
+                        ESP_LOGI(TAG, "Bad CRC");
                         /* BadCRC */
                         /* indicate that an error has occurred during
                            the reception of a frame */
@@ -584,15 +600,19 @@ static void MSTP_Receive_Frame_FSM(void)
                         Receive_State = MSTP_RECEIVE_STATE_IDLE;
                     } else {
                         if (DataLength == 0) {
+                            ESP_LOGI(TAG, "No Data");
                             /* NoData */
                             if ((DestinationAddress == This_Station) ||
                                 (DestinationAddress ==
                                     MSTP_BROADCAST_ADDRESS)) {
+                                        ESP_LOGI(TAG, "For us");
                                 /* ForUs */
                                 /* indicate that a frame with
                                    no data has been received */
                                 MSTP_Flag.ReceivedValidFrame = true;
                             } else {
+                                ESP_LOGI(TAG, "Not for us");
+                                ESP_LOG_BUFFER_HEX(TAG,&DestinationAddress ,1);
                                 /* NotForUs */
                                 MSTP_Flag.ReceivedValidFrameNotForUs = true;
                             }

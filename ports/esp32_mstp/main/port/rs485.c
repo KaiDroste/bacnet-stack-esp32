@@ -48,11 +48,12 @@ static const char *TAG = "RS485_initalize";
 
 /* Define pins for Uart1 */
 //Define pins vor UART1
-#define UART1_TXD           (23)
-#define UART1_RXD           (22)
-#define UART1_RTS           (18)
+#define UART0_TXD           (23)
+#define UART0_RXD           (22)
+#define UART0_RTS           (18)
 
-#define BUF_SIZE            (512)
+#define BUF_SIZE            (1024)
+#define PACKET_READ_TICS    (100 / portTICK_RATE_MS) 
 
 /* buffer for storing received bytes - size must be power of two */
 // static uint8_t Receive_Buffer_Data[512];
@@ -129,7 +130,7 @@ bool rs485_turnaround_elapsed(void)
  **************************************************************************/
 bool rs485_receive_error(void)
 {
-    ESP_LOGI(TAG,"rs485_receive_error: false");
+    // ESP_LOGI(TAG,"rs485_receive_error: false");
     return false;
 }
 
@@ -168,13 +169,55 @@ bool rs485_receive_error(void)
  **************************************************************************/
 bool rs485_byte_available(uint8_t *data_register)
 {
+    // int8_t *data = (uint8_t *) malloc(8);
+    
     bool data_available = false; /* return value */
+
+
+         const int len =  uart_read_bytes(UART_NUM_1,data_register,1,PACKET_READ_TICS);
+            if ( len > 0)
+                {
+                ESP_LOGI(TAG, "Received %u bytes:", len);
+                // printf("[ ");
+                    
+                    ESP_LOG_BUFFER_HEX(TAG,data_register,1);
+                    // printf("0x%.2X ", (uint8_t)data);
+                    // *data_register = (uint8_t)data;
+                    // ESP_LOG_BUFFER_HEX(TAG,data_register,1);
+
+/* 
+                 for (int i = 0; i < len; i++) {
+                    printf("0x%.2X ", (uint8_t)data[i]);
+                    data_register[1] = (uint8_t)data[i];
+                    // printf("0x%.2X ", (uint8_t)data_register[1]);
+                
+                 } 
+                 */
+
+                // printf("] \n");
+                // data[len]= '\0';
+                // fflush(stdout);
+                                
+                rs485_silence_reset();
+                led_rx_on_interval(10);
+                data_available = true;
+                
+                    
+                }
+           
+    
+
+
+/*     
     ESP_LOGI(TAG,"RS485_DataAvailable: Look if data is aviable:%d", data_available);
-    const int len = uart_read_bytes(UART_NUM_1, data_register, 1, 100 / portTICK_RATE_MS);
+    const int len = uart_read_bytes(UART_NUM_1, data, 8, 100 / portTICK_RATE_MS);
         if ( len > 0)
              {
-                 // data_byte[len]= '\0';
-                 ESP_LOGI(TAG, "Recieve: %s", data_register );
+                // data[len]= '\0';
+                ESP_LOGI(TAG, "Received %u bytes:" ,len);
+                for (int i = 0; i < len; i++) {
+                 printf("0x%.2X ", (uint8_t)data[1]);
+                }
                  fflush(stdout);
                  
                  rs485_silence_reset();
@@ -183,7 +226,7 @@ bool rs485_byte_available(uint8_t *data_register)
                  
              }
 
-
+ */
 /*    
      if (!FIFO_Empty(&Receive_Buffer)) {
         if (data_register) {
@@ -288,8 +331,8 @@ void rs485_bytes_send(uint8_t *buffer, /* data to send */
  **************************************************************************/
 static void rs485_baud_rate_configure(void)
 {
-    uart_config_t uart1_config = {
-        .baud_rate = Baud_Rate,
+    uart_config_t uart0_config = {
+        .baud_rate = 38400,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -299,9 +342,10 @@ static void rs485_baud_rate_configure(void)
     };
     ESP_LOGI(TAG, "Start Modem application test and configure UART.");
     uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
-    uart_param_config(UART_NUM_1, &uart1_config);
-    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART1_TXD, UART1_RXD, UART1_RTS, UART_PIN_NO_CHANGE));
-    ESP_ERROR_CHECK(uart_set_mode(UART_NUM_1, UART_MODE_RS485_HALF_DUPLEX));
+    // Configure UART parameters
+    uart_param_config(UART_NUM_1, &uart0_config);
+    uart_set_pin(UART_NUM_1, UART0_TXD, UART0_RXD, UART0_RTS, UART_PIN_NO_CHANGE);
+    uart_set_mode(UART_NUM_1, UART_MODE_RS485_HALF_DUPLEX);
 }
 
 /*************************************************************************
@@ -368,7 +412,7 @@ void rs485_init(void)
 /*     uint8_t tx_byte = 0X11;
     uart_write_bytes(UART_NUM_1, (const char*)&tx_byte, 1); */
     // USART_Cmd(USART2, ENABLE);
-    vTaskDelay(5000/portTICK_PERIOD_MS); 
+    vTaskDelay(2000/portTICK_PERIOD_MS); 
     //xTaskCreate(Receive_Task, "Receive", 512, NULL, 3,NULL);
     //Receive_Task();
 
