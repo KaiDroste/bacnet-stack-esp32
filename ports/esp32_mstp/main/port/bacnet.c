@@ -32,7 +32,7 @@
 #include "bacnet/datalink/datalink.h"
 #include "bacnet/npdu.h"
 #include "bacnet/basic/services.h"
-#include "bacnet/basic/services.h"
+// #include "bacnet/basic/services.h"
 #include "bacnet/basic/tsm/tsm.h"
 #include "bacnet/dcc.h"
 #include "bacnet/iam.h"
@@ -41,6 +41,9 @@
 #include "bacnet/basic/object/bo.h"
 /* me */
 #include "bacnet.h"
+
+#include "esp_log.h"
+static const char *TAG = "bacnet.c";
 
 /* timer for device communications control */
 static struct mstimer DCC_Timer;
@@ -76,7 +79,10 @@ void bacnet_init(void)
     /* start the cyclic 1 second timer for DCC */
     mstimer_set(&DCC_Timer, DCC_CYCLE_SECONDS * 1000);
     /* Hello World! */
+    ESP_LOGI(TAG, "Send Hello World");
     Send_I_Am(&Handler_Transmit_Buffer[0]);
+    ESP_LOGI(TAG, "Send Global WhoIs");
+    Send_WhoIs_Global(0,12);
 }
 
 static uint8_t PDUBuffer[MAX_MPDU];

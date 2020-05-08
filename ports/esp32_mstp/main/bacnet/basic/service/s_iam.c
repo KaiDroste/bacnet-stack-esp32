@@ -40,6 +40,9 @@
 #include "bacnet/datalink/datalink.h"
 #include "bacnet/basic/services.h"
 
+#include "esp_log.h"
+static const char *TAG = "s_iam.c";
+
 /** @file s_iam.c  Send an I-Am message. */
 
 /** Send a I-Am request to a remote network for a specific device.
@@ -136,8 +139,8 @@ void Send_I_Am(uint8_t *buffer)
     pdu_len = iam_encode_pdu(buffer, &dest, &npdu_data);
     /* send data */
     bytes_sent = datalink_send_pdu(&dest, &npdu_data, &buffer[0], pdu_len);
-
-    if (bytes_sent <= 0) {
+    ESP_LOGI(TAG, "Message send: %d", bytes_sent);
+    if (bytes_sent <= 0) { ESP_LOGI(TAG, "Failde to send");
 #if PRINT_ENABLED
         fprintf(stderr, "Failed to Send I-Am Reply (%s)!\n", strerror(errno));
 #endif

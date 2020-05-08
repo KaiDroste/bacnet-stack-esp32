@@ -64,6 +64,7 @@ set(COMPONENT_SRCS "main.c"
 				   "bacnet/basic/service/s_ihave.c"
 				   "bacnet/whohas.c"
 				   "bacnet/ihave.c"
+				   "bacnet/basic/service/s_whois.c"
 				   
 
 				   )

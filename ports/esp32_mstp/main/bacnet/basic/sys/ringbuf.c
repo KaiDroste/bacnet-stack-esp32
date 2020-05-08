@@ -52,6 +52,10 @@
 #include <stdint.h>
 #include "bacnet/basic/sys/ringbuf.h"
 
+#include "esp_log.h"
+
+static const char *TAG = "ringbuf.c";
+
 /**
  * Returns the number of elements in the ring buffer
  *
@@ -392,6 +396,7 @@ bool Ringbuf_Data_Put(RING_BUFFER *b, volatile uint8_t *data_element)
 {
     bool status = false;
     volatile uint8_t *ring_data = NULL; /* used to help point ring data */
+    ESP_LOGI(TAG, "Ringbuf_Data_Put");
 
     if (b) {
         /* limit the amount of elements that we accept */
@@ -403,6 +408,7 @@ bool Ringbuf_Data_Put(RING_BUFFER *b, volatile uint8_t *data_element)
                 b->head++;
                 Ringbuf_Depth_Update(b);
                 status = true;
+                ESP_LOGI(TAG, "Ringbuf_Depth_Update");
             }
         }
     }

@@ -33,7 +33,7 @@
 /* destination address but is not allowed as a value for a station. */
 /* Station addresses for master nodes can be 0-127.  */
 /* Station addresses for slave nodes can be 127-254.  */
-#define MSTP_BROADCAST_ADDRESS 255
+#define MSTP_BROADCAST_ADDRESS 2
 
 /* MS/TP Frame Type */
 /* Frame Types 8 through 127 are reserved by ASHRAE. */

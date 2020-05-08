@@ -47,6 +47,7 @@ int app_main(void)
         }
         led_task();
         bacnet_task();
+        
     }
 }
 
