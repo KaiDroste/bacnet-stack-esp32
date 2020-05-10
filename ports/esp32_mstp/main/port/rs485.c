@@ -280,6 +280,7 @@ bool rs485_byte_sent(void)
  **************************************************************************/
 bool rs485_frame_sent(void)
 {
+    ESP_LOGI(TAG,"rs485_frame_sent");
      esp_err_t err = uart_wait_tx_done(UART_NUM_1,100);
     if (err == ESP_OK)
     {
@@ -301,6 +302,7 @@ void rs485_bytes_send(uint8_t *buffer, /* data to send */
     uint16_t nbytes)
 { /* number of bytes of data */
     uint8_t tx_byte;
+    rs485_frame_sent
 
     while (nbytes) {
         /* Send the data byte */
