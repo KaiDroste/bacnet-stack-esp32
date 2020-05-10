@@ -204,11 +204,13 @@ void dlmstp_automac_hander(void);
 
 bool dlmstp_init(char *ifname)
 {
+    ESP_LOGI(TAG, "dlmstp_init");
     (void)ifname;
     Ringbuf_Init(&Transmit_Queue, (uint8_t *)Transmit_Buffer,
         sizeof(struct mstp_tx_packet), MSTP_TRANSMIT_PACKET_COUNT);
     Ringbuf_Init(&PDU_Queue, (uint8_t *)&PDU_Buffer,
         sizeof(struct mstp_pdu_packet), MSTP_PDU_PACKET_COUNT);
+        ESP_LOGI(TAG,"intialize PDU_Queue");
     rs485_init();
     automac_init();
 
@@ -810,7 +812,8 @@ static bool MSTP_Master_Node_FSM(void)
                 /* invalid frame was received */
                 MSTP_Flag.ReceivedInvalidFrame = false;
                 /* wait for the next frame - remain in IDLE */
-            } else if (MSTP_Flag.ReceivedValidFrame == true) {
+            } else if (MSTP_Flag.ReceivedValidFrame == true) { 
+                ESP_LOGI(TAG, "Recieved Valid Frame");
                 switch (FrameType) {
                     case FRAME_TYPE_TOKEN:
                         /* ReceivedToken */
@@ -866,10 +869,12 @@ static bool MSTP_Master_Node_FSM(void)
             /* Note: We could wait for up to Tusage_delay */
             if (Ringbuf_Empty(&PDU_Queue)) {
                 /* NothingToSend */
+                ESP_LOGI(TAG, "Nothing to Send (PDU_Que is Empty)");
                 FrameCount = Nmax_info_frames;
                 Master_State = MSTP_MASTER_STATE_DONE_WITH_TOKEN;
                 transition_now = true;
             } else {
+                ESP_LOGI(TAG, "Reading msg (PDU_Que not Empty)");
                 uint8_t frame_type;
                 pkt = (struct mstp_pdu_packet *)Ringbuf_Peek(&PDU_Queue);
                 if (pkt->data_expecting_reply) {
@@ -899,6 +904,7 @@ static bool MSTP_Master_Node_FSM(void)
                         break;
                 }
                 (void)Ringbuf_Pop(&PDU_Queue, NULL);
+                ESP_LOGI(TAG, "RINGBUF_POP?");
             }
             break;
         case MSTP_MASTER_STATE_WAIT_FOR_REPLY:
@@ -1206,6 +1212,7 @@ static bool MSTP_Master_Node_FSM(void)
             /* BACnet Data Expecting Reply, a Test_Request, or  */
             /* a proprietary frame that expects a reply is received. */
         case MSTP_MASTER_STATE_ANSWER_DATA_REQUEST:
+            ESP_LOGI(TAG, "MSTP_MASTER_STATE_ANSWER_DATA_REQUEST");
             pkt = (struct mstp_pdu_packet *)Ringbuf_Peek(&PDU_Queue);
             if (pkt != NULL) {
                 matched = dlmstp_compare_data_expecting_reply(&InputBuffer[0],
@@ -1283,6 +1290,7 @@ int dlmstp_send_pdu(BACNET_ADDRESS *dest, /* destination address */
             pkt->destination_mac = MSTP_BROADCAST_ADDRESS;
         }
         if (Ringbuf_Data_Put(&PDU_Queue, (uint8_t *)pkt)) {
+            ESP_LOGI(TAG, "Send PDU_Que");
             bytes_sent = pdu_len;
         }
     }
@@ -1293,12 +1301,14 @@ int dlmstp_send_pdu(BACNET_ADDRESS *dest, /* destination address */
 /* returns true if the Send PDU Queue is Empty */
 bool dlmstp_send_pdu_queue_empty(void)
 {
+    ESP_LOGI(TAG, "Ringbuf_Empty");
     return Ringbuf_Empty(&PDU_Queue);
 }
 
 /* returns true if the Send PDU Queue is Full */
 bool dlmstp_send_pdu_queue_full(void)
 {
+    ESP_LOGI(TAG, "Ringbuf_Full");
     return Ringbuf_Full(&PDU_Queue);
 }
 
