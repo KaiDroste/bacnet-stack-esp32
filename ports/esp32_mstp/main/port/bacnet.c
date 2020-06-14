@@ -42,6 +42,8 @@
 /* me */
 #include "bacnet.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_log.h"
 static const char *TAG = "bacnet.c";
 
@@ -51,7 +53,7 @@ static struct mstimer DCC_Timer;
 
 void bacnet_init(void)
 {
-    dlmstp_set_mac_address(255);
+    dlmstp_set_mac_address(4);          // war bei 255
     dlmstp_set_max_master(10);
     /* initialize datalink layer */
     dlmstp_init(NULL);
@@ -79,58 +81,74 @@ void bacnet_init(void)
     /* start the cyclic 1 second timer for DCC */
     mstimer_set(&DCC_Timer, DCC_CYCLE_SECONDS * 1000);
     /* Hello World! */
-    ESP_LOGI(TAG, "Send Hello World");
-    Send_I_Am(&Handler_Transmit_Buffer[0]);
-    ESP_LOGI(TAG, "Send Global WhoIs");
-    Send_WhoIs_Global(0,12);
+    // vTaskDelay(2000/portTICK_PERIOD_MS);
+    // ESP_LOGI(TAG, "Send Hello World");
+     Send_I_Am(&Handler_Transmit_Buffer[0]);
+ 
+    // ESP_LOGI(TAG, "Send Global WhoIs");
+    // Send_WhoIs_Global(0,12);
+     
 }
 
 static uint8_t PDUBuffer[MAX_MPDU];
-void bacnet_task(void)
+void bacnet_task()
 {
     uint16_t pdu_len;
     BACNET_ADDRESS src; /* source address */
-    uint8_t i;
-    BACNET_BINARY_PV binary_value = BINARY_INACTIVE;
-    BACNET_POLARITY polarity;
-    bool out_of_service;
+    // BACNET_BINARY_PV binary_value = BINARY_INACTIVE;
+    // BACNET_POLARITY polarity;
+    // bool out_of_service;
+    struct mstimer Blink_Timer;
 
-    /* Binary Output */
-    for (i = 0; i < MAX_BINARY_OUTPUTS; i++) {
-        out_of_service = Binary_Output_Out_Of_Service(i);
-        if (!out_of_service) {
-            binary_value = Binary_Output_Present_Value(i);
-            polarity = Binary_Output_Polarity(i);
-            if (polarity != POLARITY_NORMAL) {
-                if (binary_value == BINARY_ACTIVE) {
-                    binary_value = BINARY_INACTIVE;
-                } else {
-                    binary_value = BINARY_ACTIVE;
-                }
-            }
-            if (binary_value == BINARY_ACTIVE) {
-                if (i == 0) {
-                    /* led_on(LED_2); */
-                } else {
-                    /* led_on(LED_3); */
-                }
-            } else {
-                if (i == 0) {
-                    /* led_off(LED_2); */
-                } else {
-                    /* led_off(LED_3); */
-                }
-            }
+    mstimer_set(&Blink_Timer, 125);
+
+    while(true)
+    {
+
+        // /* Binary Output */
+        // for (uint8_t i = 0; i < MAX_BINARY_OUTPUTS; i++) {
+        //     out_of_service = Binary_Output_Out_Of_Service(i);
+        //     if (!out_of_service) {
+        //         binary_value = Binary_Output_Present_Value(i);
+        //         polarity = Binary_Output_Polarity(i);
+        //         if (polarity != POLARITY_NORMAL) {
+        //             if (binary_value == BINARY_ACTIVE) {
+        //                 binary_value = BINARY_INACTIVE;
+        //             } else {
+        //                 binary_value = BINARY_ACTIVE;
+        //             }
+        //         }
+        //         if (binary_value == BINARY_ACTIVE) {
+        //             if (i == 0) {
+        //                 /* led_on(LED_2); */
+        //             } else {
+        //                 /* led_on(LED_3); */
+        //             }
+        //         } else {
+        //             if (i == 0) {
+        //                 /* led_off(LED_2); */
+        //             } else {
+        //                 /* led_off(LED_3); */
+        //             }
+        //         }
+        //     }
+        // }
+
+        if (mstimer_expired(&Blink_Timer)) {
+            mstimer_reset(&Blink_Timer);
+        }
+
+        /* handle the communication timer */
+        if (mstimer_expired(&DCC_Timer)) {
+            mstimer_reset(&DCC_Timer);
+            dcc_timer_seconds(DCC_CYCLE_SECONDS);
+        }
+        /* handle the messaging */
+        // ESP_LOGI(TAG, "Handling the messaging");
+        pdu_len = datalink_receive(&src, &PDUBuffer[0], sizeof(PDUBuffer), 0);
+        if (pdu_len) {
+            npdu_handler(&src, &PDUBuffer[0], pdu_len);
         }
     }
-    /* handle the communication timer */
-    if (mstimer_expired(&DCC_Timer)) {
-        mstimer_reset(&DCC_Timer);
-        dcc_timer_seconds(DCC_CYCLE_SECONDS);
-    }
-    /* handle the messaging */
-    pdu_len = datalink_receive(&src, &PDUBuffer[0], sizeof(PDUBuffer), 0);
-    if (pdu_len) {
-        npdu_handler(&src, &PDUBuffer[0], pdu_len);
-    }
+   //  vTaskDelay(5000/ portTICK_PERIOD_MS);
 }

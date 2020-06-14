@@ -29,10 +29,10 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 
-#define TX_LED 2
+#define TX_LED 27
 #define RX_LED 4
-#define LD3 12
-#define LD4 13
+#define LD3 33
+#define LD4 32
 
 static struct mstimer Off_Delay_Timer_Rx;
 static struct mstimer Off_Delay_Timer_Tx;

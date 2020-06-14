@@ -31,7 +31,7 @@
 // #include "hardware.h" //STM 32 specifc
 #include "bacnet/basic/sys/mstimer.h"
 #include "bacnet/bits.h"
-// #include "bacnet/basic/sys/fifo.h"
+#include "bacnet/basic/sys/fifo.h"
 #include "led.h"
 #include "rs485.h"
 
@@ -41,23 +41,27 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
+#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 
 
-static const char *TAG = "RS485_initalize";
+static const char *TAG = "RS485";
 
 /* Define pins for Uart1 */
 //Define pins vor UART1
-#define UART0_TXD           (23)
-#define UART0_RXD           (22)
+#define UART0_TXD           (17)
+#define UART0_RXD           (16)
 #define UART0_RTS           (18)
 
 #define BUF_SIZE            (1024)
-#define PACKET_READ_TICS    (100 / portTICK_RATE_MS) 
+#define RD_BUF_SIZE         (BUF_SIZE)
+#define PACKET_READ_TICS    (500 / portTICK_RATE_MS) 
+static QueueHandle_t uart_queue;
 
 /* buffer for storing received bytes - size must be power of two */
-// static uint8_t Receive_Buffer_Data[512];
-// static FIFO_BUFFER Receive_Buffer;
+static uint8_t Receive_Buffer_Data[512];
+static FIFO_BUFFER Receive_Buffer;
 /* amount of silence on the wire */
 static struct mstimer Silence_Timer;
 /* baud rate */
@@ -91,6 +95,7 @@ void rs485_silence_reset(void)
  **************************************************************************/
 bool rs485_silence_elapsed(uint32_t interval)
 {
+  
     return (mstimer_elapsed(&Silence_Timer) > interval);
 }
 
@@ -161,6 +166,85 @@ bool rs485_receive_error(void)
 //     //     (void)FIFO_Put(&Receive_Buffer, data_byte);
 //     // }
 // }
+/*************************************************************************
+ * DESCRIPTION: Reads the uart bytes
+ * RETURN:      true if a byte is available, with the byte in the parameter
+ * NOTES:       none
+ **************************************************************************/
+void uart_event_task()
+{
+uart_event_t event;
+    // size_t buffered_size;
+    uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
+     uint8_t data_byte;
+    for(;;) {
+        //Waiting for UART event.
+        if(xQueueReceive(uart_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
+            bzero(dtmp, RD_BUF_SIZE);
+            ESP_LOGV(TAG, "uart[%d] event:", UART_NUM_1);
+            switch(event.type) {
+                //Event of UART receving data
+                /*We'd better handler data event fast, there would be much more data events than
+                other types of events. If we take too much time on data event, the queue might
+                be full.*/
+                case UART_DATA:
+                    ESP_LOGV(TAG, "[UART DATA]: %d", event.size);
+                    const uint8_t len =  uart_read_bytes(UART_NUM_1, dtmp, event.size, portMAX_DELAY);
+                   // memcpy(data_byte, dtmp, event.size);
+                    // data_byte = dtmp;
+                    ESP_LOG_BUFFER_HEX(TAG, dtmp, event.size);
+                    for (int i = 0; i < len; i++) {
+                    data_byte = dtmp[i];
+                    (void)FIFO_Put(&Receive_Buffer, data_byte);
+                    }
+                     
+                    break;
+                //Event of HW FIFO overflow detected
+                case UART_FIFO_OVF:
+                    ESP_LOGV(TAG, "hw fifo overflow");
+                    // If fifo overflow happened, you should consider adding flow control for your application.
+                    // The ISR has already reset the rx FIFO,
+                    // As an example, we directly flush the rx buffer here in order to read more data.
+                    uart_flush_input(UART_NUM_1);
+                    xQueueReset(uart_queue);
+                    break;
+                //Event of UART ring buffer full
+                case UART_BUFFER_FULL:
+                    ESP_LOGV(TAG, "ring buffer full");
+                    // If buffer full happened, you should consider encreasing your buffer size
+                    // As an example, we directly flush the rx buffer here in order to read more data.
+                    uart_flush_input(UART_NUM_1);
+                    xQueueReset(uart_queue);
+                    break;
+                //Event of UART RX break detected
+                case UART_BREAK:
+                    ESP_LOGV(TAG, "uart rx break");
+                    break;
+                //Event of UART parity check error
+                case UART_PARITY_ERR:
+                    ESP_LOGV(TAG, "uart parity error");
+                    break;
+                //Event of UART frame error
+                case UART_FRAME_ERR:
+                    ESP_LOGV(TAG, "uart frame error");
+                    break;
+                //UART_PATTERN_DET
+                case UART_PATTERN_DET:
+                    ESP_LOGV(TAG, "detect pattern. No pattern set");
+                    break;
+                //Others
+                default:
+                    ESP_LOGV(TAG, "uart event type: %d", event.type);
+                    break;
+            }
+        }
+    }
+    free(dtmp);
+    dtmp = NULL;
+    vTaskDelete(NULL);
+}
+
+
 
 /*************************************************************************
  * DESCRIPTION: Return true if a byte is available
@@ -172,38 +256,50 @@ bool rs485_byte_available(uint8_t *data_register)
     // int8_t *data = (uint8_t *) malloc(8);
     
     bool data_available = false; /* return value */
+    ESP_LOGI(TAG, "check if Bytes aviable");
+
+    if (!FIFO_Empty(&Receive_Buffer)) {
+        if (data_register) {
+            *data_register = FIFO_Get(&Receive_Buffer);
+        }
+        rs485_silence_reset();
+        data_available = true;
+        //led_rx_on_interval(10);
+    }
 
 
-         const int len =  uart_read_bytes(UART_NUM_1,data_register,1,PACKET_READ_TICS);
-            if ( len > 0)
-                {
-                ESP_LOGI(TAG, "Received %u bytes:", len);
-                // printf("[ ");
+
+
+//          const int len =  uart_read_bytes(UART_NUM_1,data_register,1,PACKET_READ_TICS);
+//             if ( len > 0)
+//                 {
+//                 ESP_LOGI(TAG, "Received %u bytes:", len);
+//                 // printf("[ ");
                     
-                    ESP_LOG_BUFFER_HEX(TAG,data_register,1);
-                    // printf("0x%.2X ", (uint8_t)data);
-                    // *data_register = (uint8_t)data;
-                    // ESP_LOG_BUFFER_HEX(TAG,data_register,1);
+//                     ESP_LOG_BUFFER_HEX(TAG,data_register,1);
+//                     // printf("0x%.2X ", (uint8_t)data);
+//                     // *data_register = (uint8_t)data;
+//                     // ESP_LOG_BUFFER_HEX(TAG,data_register,1);
 
-/* 
-                 for (int i = 0; i < len; i++) {
-                    printf("0x%.2X ", (uint8_t)data[i]);
-                    data_register[1] = (uint8_t)data[i];
-                    // printf("0x%.2X ", (uint8_t)data_register[1]);
+// /* 
+//                  for (int i = 0; i < len; i++) {
+//                     printf("0x%.2X ", (uint8_t)data[i]);
+//                     data_register[1] = (uint8_t)data[i];
+//                     // printf("0x%.2X ", (uint8_t)data_register[1]);
                 
-                 } 
-                 */
+//                  } 
+//                  */
 
-                // printf("] \n");
-                // data[len]= '\0';
-                // fflush(stdout);
+//                 // printf("] \n");
+//                 // data[len]= '\0';
+//                  fflush(stdout);
                                 
-                rs485_silence_reset();
-                led_rx_on_interval(10);
-                data_available = true;
+//                 rs485_silence_reset();
+//                 led_rx_on_interval(10);
+//                 data_available = true;
                 
                     
-                }
+//                 }
            
     
 
@@ -248,7 +344,8 @@ bool rs485_byte_available(uint8_t *data_register)
  **************************************************************************/
 void rs485_byte_send(uint8_t tx_byte)
 {
-    ESP_LOGI(TAG,"rs485_byte_send");
+  //   ESP_LOG_BUFFER_HEX(TAG, tx_byte, 1);
+    ESP_LOGI(TAG,"byte_send");
     led_tx_on_interval(10);
     uart_write_bytes(UART_NUM_1, (const char*)&tx_byte, 1);
     rs485_silence_reset();
@@ -262,7 +359,7 @@ void rs485_byte_send(uint8_t tx_byte)
  **************************************************************************/
 bool rs485_byte_sent(void)
 {
-    ESP_LOGI(TAG,"rs485_byte_sent");
+    ESP_LOGI(TAG,"byte_sent");
      esp_err_t err = uart_wait_tx_done(UART_NUM_1,100);
     if (err == ESP_OK)
     {
@@ -333,7 +430,7 @@ void rs485_bytes_send(uint8_t *buffer, /* data to send */
 static void rs485_baud_rate_configure(void)
 {
     uart_config_t uart0_config = {
-        .baud_rate = 38400,
+        .baud_rate = Baud_Rate,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
@@ -342,11 +439,15 @@ static void rs485_baud_rate_configure(void)
         .source_clk = UART_SCLK_APB,
     };
     ESP_LOGI(TAG, "Start Modem application test and configure UART.");
-    uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
+    uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 20, &uart_queue, 0);
     // Configure UART parameters
     uart_param_config(UART_NUM_1, &uart0_config);
     uart_set_pin(UART_NUM_1, UART0_TXD, UART0_RXD, UART0_RTS, UART_PIN_NO_CHANGE);
     uart_set_mode(UART_NUM_1, UART_MODE_RS485_HALF_DUPLEX);
+
+    //Reads uart and puts data to FIFO Buffer
+    xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, NULL);
+  
 }
 
 /*************************************************************************
@@ -394,11 +495,13 @@ uint32_t rs485_baud_rate(void)
 void rs485_rts_enable(bool enable)
 {
     if (enable) {
-        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,1));
         ESP_LOGI(TAG, "RTS_Enable");
+        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,1));
+        
     } else {
-        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,2));
         ESP_LOGI(TAG, "RTS_Disable");
+        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,0));
+        
     }
 }
 
@@ -410,18 +513,19 @@ void rs485_rts_enable(bool enable)
 void rs485_init(void)
 {
     rs485_baud_rate_set(Baud_Rate);
-/*     uint8_t tx_byte = 0X11;
-    uart_write_bytes(UART_NUM_1, (const char*)&tx_byte, 1); */
+    //  uint8_t tx_byte = 0X11;
+    // ESP_LOGI(TAG,"write test byte to uart");
+     uart_write_bytes(UART_NUM_1, "TEST BYtes", 20); 
     // USART_Cmd(USART2, ENABLE);
     vTaskDelay(2000/portTICK_PERIOD_MS); 
     //xTaskCreate(Receive_Task, "Receive", 512, NULL, 3,NULL);
     //Receive_Task();
 
 
-    /* Not neccessary any more 
+     
         FIFO_Init(&Receive_Buffer, &Receive_Buffer_Data[0],
         (unsigned)sizeof(Receive_Buffer_Data));
-     */
+    
 
     rs485_silence_reset();
 }

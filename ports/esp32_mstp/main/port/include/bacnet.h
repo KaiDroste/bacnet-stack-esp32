@@ -32,8 +32,7 @@ extern "C" {
 
     void bacnet_init(
         void);
-    void bacnet_task(
-        void);
+    void bacnet_task();
 
 #ifdef __cplusplus
 }

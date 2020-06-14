@@ -39,7 +39,7 @@
 static volatile unsigned long Millisecond_Counter;
 static volatile struct mstimer_callback_data_t *Callback_Head;
 
-#define ms_led 14
+#define ms_led 2
 
 /**
  * Activate the LED
@@ -101,8 +101,12 @@ void SysTick_Handler(void)
  * @return the current milliseconds count
  */
 unsigned long mstimer_now(void)
-{
-    return Millisecond_Counter;
+{   
+
+    // return Millisecond_Counter;
+    
+   // return xTaskGetTickCount();
+    return esp_timer_get_time()/1000;
 }
 
 /**
@@ -142,14 +146,32 @@ void mstimer_callback(struct mstimer_callback_data_t *new_cb,
 /**
  * Timer setup for 1 millisecond timer
  */
-void mstimer_init(void)
+void mstimer_init()
 {
 
     /* Configure the Receive LED */
     gpio_pad_select_gpio(ms_led);
     gpio_set_direction(ms_led, GPIO_MODE_OUTPUT);
-    
-    // vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+
+    //Setup simple timer
+
+    uint32_t tickcount=xTaskGetTickCount();
+
+    while (true)
+    {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        uint32_t newtick=xTaskGetTickCount();
+
+        // one second elapse at least (maybe much more if Wifi was deconnected for a long)
+            if ((newtick<tickcount)||((newtick-tickcount)>=configTICK_RATE_HZ))
+            {
+                tickcount=newtick;
+                SysTick_Handler();
+            }
+    }
+
+      // vTaskDelay(2000 / portTICK_PERIOD_MS);
 
     // /* Setup SysTick Timer for 1ms interrupts  */
     // if (SysTick_Config(SystemCoreClock / 1000)) {

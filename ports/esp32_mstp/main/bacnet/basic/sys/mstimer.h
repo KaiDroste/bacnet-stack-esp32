@@ -71,7 +71,7 @@ void mstimer_callback(
     mstimer_callback_function callback,
     unsigned long milliseconds);
 BACNET_STACK_EXPORT
-void mstimer_init(void);
+void mstimer_init();
 
 #ifdef __cplusplus
 }

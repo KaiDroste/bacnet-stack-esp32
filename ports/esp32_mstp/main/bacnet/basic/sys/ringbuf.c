@@ -83,6 +83,7 @@ unsigned Ringbuf_Count(RING_BUFFER const *b)
  */
 bool Ringbuf_Full(RING_BUFFER const *b)
 {
+    ESP_LOGI(TAG, "Ringbuf_Full-Check");
     return (b ? (Ringbuf_Count(b) == b->element_count) : true);
 }
 
@@ -370,6 +371,7 @@ bool Ringbuf_Put_Front(RING_BUFFER *b, uint8_t *data_element)
  */
 volatile void *Ringbuf_Data_Peek(RING_BUFFER *b)
 {
+    ESP_LOGI(TAG, "Ringbuf_Data_Peek");
     volatile uint8_t *ring_data = NULL; /* used to help point ring data */
 
     if (b) {

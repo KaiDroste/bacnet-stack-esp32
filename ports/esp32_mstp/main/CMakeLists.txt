@@ -50,7 +50,7 @@ set(COMPONENT_SRCS "main.c"
 				   "bacnet/basic/sys/ringbuf.c"
 				   "port/automac.c"
 				   "bacnet/basic/sys/mstimer.c"
-				   # "bacnet/basic/sys/fifo.c" #fifo handled by esp uart
+				   "bacnet/basic/sys/fifo.c" 
 				   "bacnet/datalink/crc.c"
 				   "port/mstimer-init.c"
 				   "bacnet/basic/service/h_whohas.c"

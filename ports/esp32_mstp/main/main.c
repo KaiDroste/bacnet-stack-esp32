@@ -29,37 +29,28 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
+// #include "bacnet/wp.h"
+
 char *BACnet_Version = "1.0";
 #define PRINT_ENABLED
 
-int app_main(void)
+void app_main(void) 
 {
-    struct mstimer Blink_Timer;
+    // struct mstimer Blink_Timer;
 
-    mstimer_init();
+   // xTaskCreate(mstimer_init, "mstimer_init",512,NULL,5,NULL);
+    // mstimer_init();
     led_init();
     bacnet_init();
-    mstimer_set(&Blink_Timer, 125);
-    for (;;) {
-        if (mstimer_expired(&Blink_Timer)) {
-            mstimer_reset(&Blink_Timer);
-            led_ld3_toggle();
-        }
-        led_task();
-        bacnet_task();
-        
-    }
-}
+    // mstimer_set(&Blink_Timer, 125);
 
-// /* Entry point */
-// void app_main()
-// {
-//     // Cannot run BACnet code here, the default stack size is to small : 4096
-//     // byte
-//     xTaskCreate(BACnetTask, /* Function to implement the task */
-//         "BACnetTask", /* Name of the task */
-//         10000, /* Stack size in words */
-//         NULL, /* Task input parameter */
-//         20, /* Priority of the task */
-//         NULL); /* Task handle. */
-// }
+    xTaskCreate(bacnet_task, /* Function to implement the task */
+        "BACnetTask", /* Name of the task */
+        10000, /* Stack size in words */
+        NULL, /* Task input parameter */
+        5, /* Priority of the task */
+        NULL); /* Task handle. */
+
+
+   // wp_encode_apdu()
+}

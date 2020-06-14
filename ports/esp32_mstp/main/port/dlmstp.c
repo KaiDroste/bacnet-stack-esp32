@@ -140,9 +140,11 @@ static uint8_t Nmax_master = 127;
 /* not to exceed 100 milliseconds.) */
 /* At 9600 baud, 60 bit times would be about 6.25 milliseconds */
 /* const uint16_t Tframe_abort = 1 + ((1000 * 60) / 9600); */
+/* At 36400 baud, 60 bit times would be about 2.5 milliseconds */
+/* const uint16_t Tframe_abort = 1 + ((1000 * 60) / 38400); */
 /* At 115200 baud, 60 bit times would be about 0.5 milliseconds */
 /* const uint16_t Tframe_abort = 1 + ((1000 * 60) / 115200); */
-#define Tframe_abort 30
+#define Tframe_abort 3
 
 /* The maximum time a node may wait after reception of a frame that expects */
 /* a reply before sending the first octet of a reply or Reply Postponed */
@@ -479,6 +481,7 @@ static void MSTP_Receive_Frame_FSM(void)
 
     switch (Receive_State) {
         case MSTP_RECEIVE_STATE_IDLE:
+            ESP_LOGD(TAG, "Status idle");
             /* In the IDLE state, the node waits
                for the beginning of a frame. */
             if (rs485_receive_error()) {
@@ -760,6 +763,7 @@ static bool MSTP_Master_Node_FSM(void)
     next_next_station = (Next_Station + 1) % (Nmax_master + 1);
     switch (Master_State) {
         case MSTP_MASTER_STATE_INITIALIZE:
+            ESP_LOGD(TAG, "Master_State_Init");
             if (This_Station == 255) {
                 dlmstp_automac_hander();
                 if (This_Station != 255) {
@@ -1058,6 +1062,7 @@ static bool MSTP_Master_Node_FSM(void)
             /* The PASS_TOKEN state listens for a successor to begin using */
             /* the token that this node has just attempted to pass. */
         case MSTP_MASTER_STATE_PASS_TOKEN:
+            ESP_LOGD(TAG,"MSTP_MASTER_STATE_PASS_TOKEN"); 
             if (rs485_silence_elapsed(Tusage_timeout)) {
                 if (RetryCount < Nretry_token) {
                     /* RetrySendToken */
@@ -1271,13 +1276,14 @@ static bool MSTP_Master_Node_FSM(void)
 int dlmstp_send_pdu(BACNET_ADDRESS *dest, /* destination address */
     BACNET_NPDU_DATA *npdu_data, /* network information */
     uint8_t *pdu, /* any data to be sent - may be null */
-    unsigned pdu_len)
-{ /* number of bytes of data */
+    unsigned pdu_len) /* number of bytes of data */
+{ 
     int bytes_sent = 0;
     struct mstp_pdu_packet *pkt;
     uint16_t i = 0;
 
     pkt = (struct mstp_pdu_packet *)Ringbuf_Data_Peek(&PDU_Queue);
+   // ESP_LOGI(TAG,"%d" ,&pkt);
     if (pkt) {
         pkt->data_expecting_reply = npdu_data->data_expecting_reply;
         for (i = 0; i < pdu_len; i++) {
@@ -1290,7 +1296,7 @@ int dlmstp_send_pdu(BACNET_ADDRESS *dest, /* destination address */
             pkt->destination_mac = MSTP_BROADCAST_ADDRESS;
         }
         if (Ringbuf_Data_Put(&PDU_Queue, (uint8_t *)pkt)) {
-            ESP_LOGI(TAG, "Send PDU_Que");
+            ESP_LOGI(TAG, "Send PDU_Que");          
             bytes_sent = pdu_len;
         }
     }
@@ -1515,13 +1521,15 @@ uint16_t dlmstp_receive(BACNET_ADDRESS *src, /* source address */
 { /* milliseconds to wait for a packet */
     uint16_t pdu_len = 0; /* return value */
     bool transmitting = false;
-
+    ESP_LOGI(TAG,"dlmstp_receive");
     /* set the input buffer to the same data storage for zero copy */
     if (!InputBuffer) {
         InputBuffer = pdu;
         InputBufferSize = max_pdu;
     }
+    ESP_LOGD(TAG, "Receive State: %d", Receive_State);
     if (This_Station == 255) {
+        ESP_LOGD(TAG, "enable Automac");
         automac_enabled_set(true);
     }
     if (Receive_State == MSTP_RECEIVE_STATE_IDLE) {
@@ -1535,12 +1543,14 @@ uint16_t dlmstp_receive(BACNET_ADDRESS *src, /* source address */
             MSTP_Receive_Frame_FSM();
             /* process another byte, if available */
             if (!rs485_byte_available(NULL)) {
+                ESP_LOGD(TAG,"No data aviable");
                 break;
             }
         }
     }
     /* only do master state machine while rx is idle */
     if ((Receive_State == MSTP_RECEIVE_STATE_IDLE) && (transmitting == false)) {
+        ESP_LOGD(TAG, "transmitting: false, MSTP_RECEIVE_STATE_IDLE");
         if ((This_Station != 255) && (MSTP_Flag.ReceivedValidFrameNotForUs)) {
             MSTP_Flag.ReceivedValidFrameNotForUs = false;
             if ((SourceAddress == This_Station) && automac_enabled()) {
@@ -1549,6 +1559,7 @@ uint16_t dlmstp_receive(BACNET_ADDRESS *src, /* source address */
                 This_Station = 255;
             }
         } else {
+            ESP_LOGD(TAG, "Start Master Node");
             while (MSTP_Master_Node_FSM()) {
                 /* do nothing while some states fast transition */
             };
