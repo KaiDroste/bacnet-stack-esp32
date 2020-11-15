@@ -51,6 +51,10 @@
 /** ESP32- Logging **/
 static const char *TAG = "RS485_initalize";
 
+#define UART1_TXD           (23)
+#define UART1_RXD           (22)
+#define UART1_RTS           (18)
+
 /* buffer for storing received bytes - size must be power of two */
 /* BACnet MAX_MPDU for MS/TP is 501 bytes */
 static uint8_t Receive_Queue_Data[512];
@@ -185,9 +189,9 @@ void rs485_rts_enable(bool enable)
 {
     Transmitting = enable;
     if (Transmitting) {
-        GPIO_WriteBit(GPIOF, GPIO_Pin_15, Bit_SET);
+        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,1));
     } else {
-        GPIO_WriteBit(GPIOF, GPIO_Pin_15, Bit_RESET);
+        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,0));
     }
 }
 
@@ -235,11 +239,11 @@ bool rs485_bytes_send(uint8_t *buffer, uint16_t nbytes)
         if (FIFO_Add(&Transmit_Queue, buffer, nbytes)) {
             rs485_silence_reset();
             rs485_rts_enable(true);
-            /* disable the USART to generate interrupts on RX not empty */
-            USART_ITConfig(USART6, USART_IT_RXNE, DISABLE);
-            /* enable the USART to generate interrupts on TX empty */
-            USART_ITConfig(USART6, USART_IT_TXE, ENABLE);
-            /* TXE interrupt will load the first byte */
+            // /* disable the USART to generate interrupts on RX not empty */
+            // USART_ITConfig(USART6, USART_IT_RXNE, DISABLE);
+            // /* enable the USART to generate interrupts on TX empty */
+            // USART_ITConfig(USART6, USART_IT_TXE, ENABLE);
+            // /* TXE interrupt will load the first byte */
             status = true;
         }
     }
@@ -252,17 +256,20 @@ bool rs485_bytes_send(uint8_t *buffer, uint16_t nbytes)
  */
 static void rs485_baud_rate_configure(void)
 {
-    USART_InitTypeDef USART_InitStructure;
-
-    USART_InitStructure.USART_BaudRate = Baud_Rate;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl =
-        USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    /* Configure USARTx */
-    USART_Init(USART6, &USART_InitStructure);
+    uart_config_t uart1_config = {
+        .baud_rate = Baud_Rate,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        // .rx_flow_ctrl_thresh = 122,
+        // .source_clk = UART_SCLK_APB,
+    };
+    ESP_LOGI(TAG, "Start Modem application test and configure UART.");
+    uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
+    uart_param_config(UART_NUM_1, &uart1_config);
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART1_TXD, UART1_RXD, UART1_RTS, UART_PIN_NO_CHANGE));
+    ESP_ERROR_CHECK(uart_set_mode(UART_NUM_1, UART_MODE_RS485_HALF_DUPLEX));
 }
 
 /**
@@ -324,8 +331,11 @@ uint32_t rs485_bytes_received(void)
  */
 void rs485_init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
+    /** STM32 Structure **
+     * GPIO_InitTypeDef GPIO_InitStructure;
+     * NVIC_InitTypeDef NVIC_InitStructure;
+     * /
+    
 
     /* initialize the Rx and Tx byte queues */
     FIFO_Init(&Receive_Queue, &Receive_Queue_Data[0],
@@ -333,54 +343,55 @@ void rs485_init(void)
     FIFO_Init(&Transmit_Queue, &Transmit_Queue_Data[0],
         (unsigned)sizeof(Transmit_Queue_Data));
 
-    /* DFR0259 RS485 Shield - TXD=PG14, RXD=PG9, USART6 */
-    /* Enable GPIOx clock */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
-    /* Enable USARTx Clock */
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
+    // /** STM32 Structure **
+    // /* DFR0259 RS485 Shield - TXD=PG14, RXD=PG9, USART6 */
+    // /* Enable GPIOx clock */
+    // RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);
+    // /* Enable USARTx Clock */
+    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
 
-    /* Configure USARTx Rx and Tx pins for Alternate Function (AF) */
-    /* DFR0259 RS485 Shield - TXD=PG14, RXD=PG9 */
-    GPIO_StructInit(&GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_14;
-    /* GPIO_Speed_2MHz/GPIO_Speed_25MHz/GPIO_Speed_50MHz/GPIO_Speed_100MHz */
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    /* GPIO_Mode_IN/GPIO_Mode_OUT/GPIO_Mode_AF/GPIO_Mode_AN */
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-    /* GPIO_OType_PP/GPIO_OType_OD */
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    /* GPIO_PuPd_NOPULL, GPIO_PuPd_UP, GPIO_PuPd_DOWN */
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(GPIOG, &GPIO_InitStructure);
-    /* alternate function (AF) */
-    GPIO_PinAFConfig(GPIOG, GPIO_PinSource9, GPIO_AF_USART6);
-    GPIO_PinAFConfig(GPIOG, GPIO_PinSource14, GPIO_AF_USART6);
+    // /* Configure USARTx Rx and Tx pins for Alternate Function (AF) */
+    // /* DFR0259 RS485 Shield - TXD=PG14, RXD=PG9 */
+    // GPIO_StructInit(&GPIO_InitStructure);
+    // GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_14;
+    // /* GPIO_Speed_2MHz/GPIO_Speed_25MHz/GPIO_Speed_50MHz/GPIO_Speed_100MHz */
+    // GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    // /* GPIO_Mode_IN/GPIO_Mode_OUT/GPIO_Mode_AF/GPIO_Mode_AN */
+    // GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+    // /* GPIO_OType_PP/GPIO_OType_OD */
+    // GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    // /* GPIO_PuPd_NOPULL, GPIO_PuPd_UP, GPIO_PuPd_DOWN */
+    // GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+    // GPIO_Init(GPIOG, &GPIO_InitStructure);
+    // /* alternate function (AF) */
+    // GPIO_PinAFConfig(GPIOG, GPIO_PinSource9, GPIO_AF_USART6);
+    // GPIO_PinAFConfig(GPIOG, GPIO_PinSource14, GPIO_AF_USART6);
 
-    /* DFR0259 RS485 Shield - CE=PF15 */
-    /* Enable GPIOx clock */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
-    /* Configure the Request To Send (RTS) aka Transmit Enable pin */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOF, &GPIO_InitStructure);
+    // /* DFR0259 RS485 Shield - CE=PF15 */
+    // /* Enable GPIOx clock */
+    // RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOF, ENABLE);
+    // /* Configure the Request To Send (RTS) aka Transmit Enable pin */
+    // GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15;
+    // GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    // GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    // GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    // GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    // GPIO_Init(GPIOF, &GPIO_InitStructure);
 
-    /* Configure the NVIC Preemption Priority Bits */
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
-    /* Enable the USARTx Interrupt */
-    NVIC_InitStructure.NVIC_IRQChannel = USART6_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-    /* enable the USART to generate interrupts on RX */
-    USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
+    // /* Configure the NVIC Preemption Priority Bits */
+    // NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+    // /* Enable the USARTx Interrupt */
+    // NVIC_InitStructure.NVIC_IRQChannel = USART6_IRQn;
+    // NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    // NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    // NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    // NVIC_Init(&NVIC_InitStructure);
+    // /* enable the USART to generate interrupts on RX */
+    // USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
 
     rs485_baud_rate_set(Baud_Rate);
 
-    USART_Cmd(USART6, ENABLE);
+    // USART_Cmd(USART6, ENABLE);
 
     rs485_silence_reset();
 }
