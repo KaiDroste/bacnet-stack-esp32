@@ -23,9 +23,10 @@
  *
  *************************************************************************/
 
+#include <stdbool.h>
+#include <stdint.h>
+
 /**** From STM32 *****************
- * #include <stdbool.h>
- * #include <stdint.h>
  * #include "hardware.h"
  * #include "stm32f4xx.h"
  * #include "stm32f4xx_pwr.h"
@@ -43,8 +44,6 @@
   #include "esp_log.h"
   #include "nvs_flash.h"
 /***************************************/
-
-
 
 #include "bacnet/basic/sys/mstimer.h"
 #include "rs485.h"

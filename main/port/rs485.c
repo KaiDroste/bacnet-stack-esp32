@@ -25,16 +25,31 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stm32f4xx.h"
+/**** From STM32 *****************
+ * #include "stm32f4xx.h"
+*********************************/
+/**** Import ESP32 modules ****/
+ /** Free RTOS **/
+  #include "freertos/task.h"
+ /** Other **/
+  #include "driver/uart.h"
+  #include "driver/gpio.h"
+  #include "esp_log.h"
+  #include "nvs_flash.h"
+/***************************************/
 #include "bacnet/basic/sys/mstimer.h"
 #include "bacnet/bits.h"
 #include "bacnet/basic/sys/fifo.h"
 #include "bacnet/datalink/mstpdef.h"
 #include "rs485.h"
+
+/** ESP32- Logging **/
+static const char *TAG = "RS485_initalize";
 
 /* buffer for storing received bytes - size must be power of two */
 /* BACnet MAX_MPDU for MS/TP is 501 bytes */
