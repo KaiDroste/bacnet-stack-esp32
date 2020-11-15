@@ -32,11 +32,11 @@
                 </option>
                 <option>
                     <name>Input description</name>
-                    <state>Full formatting, without multibyte support.</state>
+                    <state>Automatic choice of formatter, without multibyte support.</state>
                 </option>
                 <option>
                     <name>Output description</name>
-                    <state>Full formatting, without multibyte support.</state>
+                    <state>Automatic choice of formatter, without multibyte support.</state>
                 </option>
                 <option>
                     <name>GOutputBinary</name>
@@ -62,7 +62,7 @@
                 </option>
                 <option>
                     <name>OGProductVersion</name>
-                    <state>5.10.0.159</state>
+                    <state>8.20.2.14834</state>
                 </option>
                 <option>
                     <name>OGLastSavedByProductVersion</name>
@@ -78,7 +78,7 @@
                 </option>
                 <option>
                     <name>OGChipSelectEditMenu</name>
-                    <state>STM32F103ZG	ST STM32F103ZG</state>
+                    <state>STM32F429ZI	ST STM32F429ZI</state>
                 </option>
                 <option>
                     <name>GenLowLevelInterface</name>
@@ -117,11 +117,11 @@
                 <option>
                     <name>GBECoreSlave</name>
                     <version>27</version>
-                    <state>38</state>
+                    <state>39</state>
                 </option>
                 <option>
                     <name>OGUseCmsis</name>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>OGUseCmsisDspLib</name>
@@ -134,21 +134,21 @@
                 <option>
                     <name>CoreVariant</name>
                     <version>27</version>
-                    <state>38</state>
+                    <state>39</state>
                 </option>
                 <option>
                     <name>GFPUDeviceSlave</name>
-                    <state>STM32F103ZG	ST STM32F103ZG</state>
+                    <state>STM32F429ZI	ST STM32F429ZI</state>
                 </option>
                 <option>
                     <name>FPU2</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>4</state>
                 </option>
                 <option>
                     <name>NrRegs</name>
                     <version>0</version>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>NEON</name>
@@ -157,7 +157,7 @@
                 <option>
                     <name>GFPUCoreSlave2</name>
                     <version>27</version>
-                    <state>38</state>
+                    <state>39</state>
                 </option>
                 <option>
                     <name>OGCMSISPackSelectDevice</name>
@@ -173,7 +173,7 @@
                 <option>
                     <name>OGPrintfVariant</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>OGPrintfMultibyteSupport</name>
@@ -182,7 +182,7 @@
                 <option>
                     <name>OGScanfVariant</name>
                     <version>0</version>
-                    <state>1</state>
+                    <state>0</state>
                 </option>
                 <option>
                     <name>OGScanfMultibyteSupport</name>
@@ -198,7 +198,7 @@
                 </option>
                 <option>
                     <name>DSPExtension</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>TrustZone</name>
@@ -219,23 +219,14 @@
                 <wantNonLocal>1</wantNonLocal>
                 <debug>1</debug>
                 <option>
-                    <name>CCOptimizationNoSizeConstraints</name>
-                    <state>0</state>
-                </option>
-                <option>
                     <name>CCDefines</name>
-                    <state>STM32F10X_XL</state>
+                    <state>NDEBUG</state>
                     <state>USE_STDPERIPH_DRIVER</state>
+                    <state>STM32F4XX</state>
                     <state>BACDL_MSTP</state>
                     <state>MAX_APDU=480</state>
-                    <state>MAX_TSM_TRANSACTIONS=0</state>
-                    <state>BACAPP_BOOLEAN</state>
-                    <state>BACAPP_REAL</state>
-                    <state>BACAPP_OBJECT_ID</state>
-                    <state>BACAPP_UNSIGNED</state>
-                    <state>BACAPP_ENUMERATED</state>
-                    <state>BACAPP_CHARACTER_STRING</state>
-                    <state>WRITE_PROPERTY</state>
+                    <state>BIG_ENDIAN=0</state>
+                    <state>MAX_TSM_TRANSACTIONS=1</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -247,7 +238,7 @@
                 </option>
                 <option>
                     <name>CCPreprocLine</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCListCFile</name>
@@ -275,7 +266,7 @@
                 </option>
                 <option>
                     <name>CCDiagSuppress</name>
-                    <state></state>
+                    <state>Pe550</state>
                 </option>
                 <option>
                     <name>CCDiagRemark</name>
@@ -361,9 +352,10 @@
                 <option>
                     <name>CCIncludePath2</name>
                     <state>$PROJ_DIR$</state>
+                    <state>$PROJ_DIR$\CMSIS</state>
+                    <state>$PROJ_DIR$\CMSIS\iar</state>
+                    <state>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\inc</state>
                     <state>$PROJ_DIR$\..\..\src</state>
-                    <state>$PROJ_DIR$\CMSIS\</state>
-                    <state>$PROJ_DIR$\drivers\inc</state>
                 </option>
                 <option>
                     <name>CCStdIncCheck</name>
@@ -379,7 +371,7 @@
                 </option>
                 <option>
                     <name>CCOptLevel</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CCOptStrategy</name>
@@ -388,7 +380,7 @@
                 </option>
                 <option>
                     <name>CCOptLevelSlave</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>CompilerMisraRules98</name>
@@ -438,6 +430,10 @@
                 </option>
                 <option>
                     <name>IccFloatSemantics</name>
+                    <state>0</state>
+                </option>
+                <option>
+                    <name>CCOptimizationNoSizeConstraints</name>
                     <state>0</state>
                 </option>
                 <option>
@@ -655,15 +651,15 @@
                 <option>
                     <name>OOCOutputFormat</name>
                     <version>3</version>
-                    <state>0</state>
+                    <state>3</state>
                 </option>
                 <option>
                     <name>OCOutputOverride</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>OOCOutputFile</name>
-                    <state>c.srec</state>
+                    <state>bacnet.bin</state>
                 </option>
                 <option>
                     <name>OOCCommandLineProducer</name>
@@ -671,7 +667,7 @@
                 </option>
                 <option>
                     <name>OOCObjCopyEnable</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
             </data>
         </settings>
@@ -705,10 +701,6 @@
                 <wantNonLocal>1</wantNonLocal>
                 <debug>1</debug>
                 <option>
-                    <name>IlinkOutputFile</name>
-                    <state>c.out</state>
-                </option>
-                <option>
                     <name>IlinkLibIOConfig</name>
                     <state>1</state>
                 </option>
@@ -719,6 +711,10 @@
                 <option>
                     <name>IlinkInputFileSlave</name>
                     <state>0</state>
+                </option>
+                <option>
+                    <name>IlinkOutputFile</name>
+                    <state>bacnet.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -754,7 +750,7 @@
                 </option>
                 <option>
                     <name>IlinkMapFile</name>
-                    <state>0</state>
+                    <state>1</state>
                 </option>
                 <option>
                     <name>IlinkLogFile</name>
@@ -782,7 +778,7 @@
                 </option>
                 <option>
                     <name>IlinkIcfFile</name>
-                    <state>$PROJ_DIR$\STM32F10x_FLASH.icf</state>
+                    <state>$PROJ_DIR$\stm32f4xx.icf</state>
                 </option>
                 <option>
                     <name>IlinkIcfFileSlave</name>
@@ -1015,7 +1011,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>###Unitialized###</state>
+                    <state>bacnet-lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
@@ -1051,7 +1047,7 @@
         </settings>
     </configuration>
     <group>
-        <name>BACnet</name>
+        <name>BACnet Core</name>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\abort.c</name>
         </file>
@@ -1063,6 +1059,9 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\bacdcode.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\bacdevobjpropref.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\bacerror.c</name>
@@ -1077,13 +1076,13 @@
             <name>$PROJ_DIR$\..\..\src\bacnet\bacstr.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\src\bacnet\datalink\crc.c</name>
+            <name>$PROJ_DIR$\..\..\src\bacnet\cov.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\datetime.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\dcc.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\src\bacnet\basic\sys\fifo.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\iam.c</name>
@@ -1092,13 +1091,13 @@
             <name>$PROJ_DIR$\..\..\src\bacnet\ihave.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\lighting.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\memcopy.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\npdu.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\src\bacnet\proplist.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\proplist.c</name>
@@ -1116,6 +1115,9 @@
             <name>$PROJ_DIR$\..\..\src\bacnet\rpm.c</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\timesync.c</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\whohas.c</name>
         </file>
         <file>
@@ -1126,7 +1128,19 @@
         </file>
     </group>
     <group>
-        <name>BACnet-Handlers</name>
+        <name>BACnet Datalink</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\datalink\crc.c</name>
+        </file>
+    </group>
+    <group>
+        <name>BACnet NPDU Handler</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\basic\npdu\h_npdu.c</name>
+        </file>
+    </group>
+    <group>
+        <name>BACnet Service Handlers</name>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\service\h_apdu.c</name>
         </file>
@@ -1135,9 +1149,6 @@
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\service\h_noserv.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\src\bacnet\basic\npdu\h_npdu.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\service\h_rd.c</name>
@@ -1158,130 +1169,103 @@
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\service\h_wp.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\..\..\src\bacnet\basic\sys\mstimer.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\..\..\src\bacnet\basic\sys\ringbuf.c</name>
-        </file>
-        <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\service\s_iam.c</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\service\s_ihave.c</name>
         </file>
+    </group>
+    <group>
+        <name>BACnet System</name>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\basic\sys\fifo.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\basic\sys\mstimer.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\src\bacnet\basic\sys\ringbuf.c</name>
+        </file>
+    </group>
+    <group>
+        <name>BACnet TSM Handler</name>
         <file>
             <name>$PROJ_DIR$\..\..\src\bacnet\basic\tsm\tsm.c</name>
         </file>
     </group>
     <group>
-        <name>CMSIS</name>
+        <name>Hardware</name>
         <file>
-            <name>$PROJ_DIR$\CMSIS\iar\startup_stm32f10x_xl.s</name>
+            <name>$PROJ_DIR$\led.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\mstimer-init.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\rs485.c</name>
         </file>
     </group>
     <group>
-        <name>STM32-Lib</name>
+        <name>NUCLEO-BACnet</name>
         <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_adc.c</name>
+            <name>$PROJ_DIR$\bacnet.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_bkp.c</name>
+            <name>$PROJ_DIR$\device.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_can.c</name>
+            <name>$PROJ_DIR$\dlmstp.c</name>
         </file>
         <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_cec.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_crc.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_dac.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_dbgmcu.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_dma.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_exti.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_flash.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_fsmc.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_gpio.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_i2c.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_iwdg.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_misc.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_pwr.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_rcc.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_rtc.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_sdio.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_spi.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_tim.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_usart.c</name>
-        </file>
-        <file>
-            <name>$PROJ_DIR$\drivers\src\stm32f10x_wwdg.c</name>
+            <name>$PROJ_DIR$\netport.c</name>
         </file>
     </group>
-    <file>
-        <name>$PROJ_DIR$\automac.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\bacnet.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\bo.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\device.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\dlmstp.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\led.c</name>
-    </file>
+    <group>
+        <name>STM32F4-STARTUP</name>
+        <file>
+            <name>$PROJ_DIR$\CMSIS\iar\startup_stm32f4xx.s</name>
+        </file>
+    </group>
+    <group>
+        <name>STM32F4XX_LIB</name>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_adc.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_flash.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_gpio.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_i2c.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_iwdg.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_misc.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_pwr.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_rcc.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_tim.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_usart.c</name>
+        </file>
+    </group>
     <file>
         <name>$PROJ_DIR$\main.c</name>
     </file>
     <file>
-        <name>$PROJ_DIR$\mstimer-init.c</name>
+        <name>$PROJ_DIR$\stm32f4xx_it.c</name>
     </file>
     <file>
-        <name>$PROJ_DIR$\rs485.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\stm32f10x_it.c</name>
-    </file>
-    <file>
-        <name>$PROJ_DIR$\system_stm32f10x.c</name>
+        <name>$PROJ_DIR$\system_stm32f4xx.c</name>
     </file>
 </project>

@@ -27,44 +27,21 @@
  *************************************************************************/
 #include <stdbool.h>
 #include <stdint.h>
-#include "hardware.h"
 #include "bacnet/basic/sys/mstimer.h"
 #include "bacnet/basic/sys/debug.h"
+#include "stm32f4xx.h"
+#include "led.h"
 
 /* counter for the various timers */
 static volatile unsigned long Millisecond_Counter;
 static volatile struct mstimer_callback_data_t *Callback_Head;
 
 /**
- * Activate the LED
- */
-static void timer_debug_on(void)
-{
-    GPIO_WriteBit(GPIOB, GPIO_Pin_13, Bit_SET);
-}
-
-/**
- * Deactivate the LED
- */
-static void timer_debug_off(void)
-{
-    GPIO_WriteBit(GPIOB, GPIO_Pin_13, Bit_RESET);
-}
-
-/**
  * Toggle the state of the debug LED
  */
 static void timer_debug_toggle(void)
 {
-    static bool state = false;
-
-    if (state) {
-        timer_debug_off();
-        state = false;
-    } else {
-        timer_debug_on();
-        state = true;
-    }
+    led_toggle(LED_LD1);
 }
 
 /**
@@ -138,19 +115,11 @@ void mstimer_callback(struct mstimer_callback_data_t *new_cb,
  */
 void mstimer_init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    GPIO_StructInit(&GPIO_InitStructure);
-    /* Configure the Receive LED */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-
     /* Setup SysTick Timer for 1ms interrupts  */
     if (SysTick_Config(SystemCoreClock / 1000)) {
         /* Capture error */
         while (1)
             ;
     }
+    NVIC_EnableIRQ(SysTick_IRQn);
 }

@@ -34,13 +34,11 @@
 #include "bacnet/apdu.h"
 #include "bacnet/dcc.h"
 #include "bacnet/datalink/datalink.h"
-#include "rs485.h"
 #include "bacnet/version.h"
 #include "bacnet/basic/services.h"
-#include "bacnet/proplist.h"
 /* objects */
+#include "bacnet/basic/object/netport.h"
 #include "bacnet/basic/object/device.h"
-#include "bacnet/basic/object/bo.h"
 
 /* forward prototype */
 int Device_Read_Property_Local(BACNET_READ_PROPERTY_DATA *rpdata);
@@ -61,11 +59,15 @@ static struct my_object_functions {
                          Device_Valid_Object_Instance_Number,
                          Device_Object_Name, Device_Read_Property_Local,
                          Device_Write_Property_Local, Device_Property_Lists },
-    { OBJECT_BINARY_OUTPUT, Binary_Output_Init, Binary_Output_Count,
-        Binary_Output_Index_To_Instance, Binary_Output_Valid_Instance,
-        Binary_Output_Object_Name, Binary_Output_Read_Property,
-        Binary_Output_Write_Property, Binary_Output_Property_Lists },
-    { MAX_BACNET_OBJECT_TYPE, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+    {
+#if (BACNET_PROTOCOL_REVISION >= 17)
+        OBJECT_NETWORK_PORT, Network_Port_Init, Network_Port_Count,
+        Network_Port_Index_To_Instance, Network_Port_Valid_Instance,
+        Network_Port_Object_Name, Network_Port_Read_Property,
+        Network_Port_Write_Property, Network_Port_Property_Lists },
+    {
+#endif
+        MAX_BACNET_OBJECT_TYPE, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
 
 /* note: you really only need to define variables for
    properties that are writable or that may change.
@@ -74,9 +76,10 @@ static struct my_object_functions {
 static uint32_t Object_Instance_Number = 103;
 static BACNET_DEVICE_STATUS System_Status = STATUS_OPERATIONAL;
 static BACNET_CHARACTER_STRING My_Object_Name;
+static const char *Device_Name_Default = "stm32f4xx";
 static uint32_t Database_Revision;
 static BACNET_REINITIALIZED_STATE Reinitialize_State = BACNET_REINIT_IDLE;
-static const char *Reinit_Password = "stm32-challenge";
+static const char *Reinit_Password = "stm32f4xx";
 static const char *BACnet_Version = BACNET_VERSION_TEXT;
 
 /* These three arrays are used by the ReadPropertyMultiple handler */
@@ -93,7 +96,7 @@ static const int Device_Properties_Required[] = { PROP_OBJECT_IDENTIFIER,
 static const int Device_Properties_Optional[] = { PROP_DESCRIPTION,
     PROP_LOCATION, PROP_MAX_MASTER, PROP_MAX_INFO_FRAMES, -1 };
 
-static const int Device_Properties_Proprietary[] = { 9600, -1 };
+static const int Device_Properties_Proprietary[] = { -1 };
 
 static struct my_object_functions *Device_Objects_Find_Functions(
     BACNET_OBJECT_TYPE Object_Type)
@@ -175,13 +178,9 @@ static int Read_Property_Common(
 #if (BACNET_PROTOCOL_REVISION >= 14)
         case PROP_PROPERTY_LIST:
             Device_Objects_Property_List(
-                rpdata->object_type,
-                rpdata->object_instance,
-                &property_list);
-            apdu_len = property_list_encode(
-                rpdata,
-                property_list.Required.pList,
-                property_list.Optional.pList,
+                rpdata->object_type, rpdata->object_instance, &property_list);
+            apdu_len = property_list_encode(rpdata,
+                property_list.Required.pList, property_list.Optional.pList,
                 property_list.Proprietary.pList);
             break;
 #endif
@@ -336,8 +335,7 @@ bool Device_Set_Object_Name(BACNET_CHARACTER_STRING *object_name)
     return status;
 }
 
-bool Device_Reinitialize(
-    BACNET_REINITIALIZE_DEVICE_DATA * rd_data)
+bool Device_Reinitialize(BACNET_REINITIALIZE_DEVICE_DATA *rd_data)
 {
     bool status = false;
 
@@ -407,7 +405,7 @@ void Device_Init(object_functions_t *object_table)
         Object_Instance_Number = 103;
         srand(Object_Instance_Number);
     }
-    characterstring_init_ansi(&My_Object_Name, "stm32-design-challenge-103");
+    characterstring_init_ansi(&My_Object_Name, Device_Name_Default);
 }
 
 /* methods to manipulate the data */
@@ -753,9 +751,6 @@ int Device_Read_Property_Local(BACNET_READ_PROPERTY_DATA *rpdata)
             apdu_len =
                 encode_application_unsigned(&apdu[0], dlmstp_max_master());
             break;
-        case 9600:
-            apdu_len = encode_application_unsigned(&apdu[0], rs485_baud_rate());
-            break;
         default:
             rpdata->error_class = ERROR_CLASS_PROPERTY;
             rpdata->error_code = ERROR_CODE_UNKNOWN_PROPERTY;
@@ -872,20 +867,6 @@ bool Device_Write_Property_Local(BACNET_WRITE_PROPERTY_DATA *wp_data)
                 } else {
                     wp_data->error_class = ERROR_CLASS_PROPERTY;
                     wp_data->error_code = ERROR_CODE_NO_SPACE_TO_WRITE_PROPERTY;
-                }
-            } else {
-                wp_data->error_class = ERROR_CLASS_PROPERTY;
-                wp_data->error_code = ERROR_CODE_INVALID_DATA_TYPE;
-            }
-            break;
-        case 9600:
-            if (value.tag == BACNET_APPLICATION_TAG_UNSIGNED_INT) {
-                if ((value.type.Unsigned_Int <= 115200) &&
-                    (rs485_baud_rate_set(value.type.Unsigned_Int))) {
-                    status = true;
-                } else {
-                    wp_data->error_class = ERROR_CLASS_PROPERTY;
-                    wp_data->error_code = ERROR_CODE_VALUE_OUT_OF_RANGE;
                 }
             } else {
                 wp_data->error_class = ERROR_CLASS_PROPERTY;

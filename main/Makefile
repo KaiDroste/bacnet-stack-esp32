@@ -1,5 +1,5 @@
 #+-------------------------------------------------------------------------------------------------+
-#| GNU Make script for STM32F103xG microcontroller                                                               |
+#| GNU Make script for STM32F4xx microcontroller                                                               |
 #+-------------------------------------------------------------------------------------------------+
 TARGET=bacnet
 
@@ -9,8 +9,8 @@ BACNET_CORE := $(BACNET_SRC)/bacnet
 BACNET_BASIC := $(BACNET_CORE)/basic
 BACNET_INCLUDE := $(BACNET_SRC)
 PLATFORM_DIR = .
-LIBRARY_STM32 = ./drivers/src
-LIBRARY_STM32_INCLUDES = ./drivers/inc
+LIBRARY_STM32 = ./STM32F4xx_StdPeriph_Driver/src
+LIBRARY_STM32_INCLUDES = ./STM32F4xx_StdPeriph_Driver/inc
 LIBRARY_CMSIS = ./CMSIS
 
 INCLUDES = -I$(PLATFORM_DIR)
@@ -20,16 +20,15 @@ INCLUDES += -I$(BACNET_INCLUDE)
 
 PLATFORM_SRC = \
 	$(PLATFORM_DIR)/main.c \
-	$(PLATFORM_DIR)/automac.c \
 	$(PLATFORM_DIR)/bacnet.c \
-	$(PLATFORM_DIR)/bo.c \
 	$(PLATFORM_DIR)/device.c \
 	$(PLATFORM_DIR)/dlmstp.c \
 	$(PLATFORM_DIR)/led.c \
+	$(PLATFORM_DIR)/netport.c \
 	$(PLATFORM_DIR)/rs485.c \
-	$(PLATFORM_DIR)/stm32f10x_it.c \
-	$(PLATFORM_DIR)/system_stm32f10x.c \
-	$(PLATFORM_DIR)/mstimer-init.c
+	$(PLATFORM_DIR)/mstimer-init.c \
+	$(PLATFORM_DIR)/stm32f4xx_it.c \
+	$(PLATFORM_DIR)/system_stm32f4xx.c
 
 BASIC_SRC = \
 	$(BACNET_BASIC)/service/h_dcc.c \
@@ -75,29 +74,30 @@ BACNET_SRC = \
 	$(BACNET_CORE)/wp.c
 
 STM32_SRC = \
-	$(LIBRARY_STM32)/stm32f10x_adc.c \
-	$(LIBRARY_STM32)/stm32f10x_bkp.c \
-	$(LIBRARY_STM32)/stm32f10x_can.c \
-	$(LIBRARY_STM32)/stm32f10x_cec.c \
-	$(LIBRARY_STM32)/stm32f10x_crc.c \
-	$(LIBRARY_STM32)/stm32f10x_dac.c \
-	$(LIBRARY_STM32)/stm32f10x_dbgmcu.c \
-	$(LIBRARY_STM32)/stm32f10x_dma.c \
-	$(LIBRARY_STM32)/stm32f10x_exti.c \
-	$(LIBRARY_STM32)/stm32f10x_flash.c \
-	$(LIBRARY_STM32)/stm32f10x_fsmc.c \
-	$(LIBRARY_STM32)/stm32f10x_gpio.c \
-	$(LIBRARY_STM32)/stm32f10x_i2c.c \
-	$(LIBRARY_STM32)/stm32f10x_iwdg.c \
-	$(LIBRARY_STM32)/stm32f10x_misc.c \
-	$(LIBRARY_STM32)/stm32f10x_pwr.c \
-	$(LIBRARY_STM32)/stm32f10x_rcc.c \
-	$(LIBRARY_STM32)/stm32f10x_rtc.c \
-	$(LIBRARY_STM32)/stm32f10x_sdio.c \
-	$(LIBRARY_STM32)/stm32f10x_spi.c \
-	$(LIBRARY_STM32)/stm32f10x_tim.c \
-	$(LIBRARY_STM32)/stm32f10x_usart.c \
-	$(LIBRARY_STM32)/stm32f10x_wwdg.c \
+	$(LIBRARY_STM32)/stm32f4xx_adc.c \
+	$(LIBRARY_STM32)/stm32f4xx_can.c \
+	$(LIBRARY_STM32)/stm32f4xx_crc.c \
+	$(LIBRARY_STM32)/stm32f4xx_dac.c \
+	$(LIBRARY_STM32)/stm32f4xx_dbgmcu.c \
+	$(LIBRARY_STM32)/stm32f4xx_dcmi.c \
+	$(LIBRARY_STM32)/stm32f4xx_dma.c \
+	$(LIBRARY_STM32)/stm32f4xx_exti.c \
+	$(LIBRARY_STM32)/stm32f4xx_flash.c \
+	$(LIBRARY_STM32)/stm32f4xx_fsmc.c \
+	$(LIBRARY_STM32)/stm32f4xx_gpio.c \
+	$(LIBRARY_STM32)/stm32f4xx_i2c.c \
+	$(LIBRARY_STM32)/stm32f4xx_iwdg.c \
+	$(LIBRARY_STM32)/stm32f4xx_misc.c \
+	$(LIBRARY_STM32)/stm32f4xx_pwr.c \
+	$(LIBRARY_STM32)/stm32f4xx_rcc.c \
+	$(LIBRARY_STM32)/stm32f4xx_rng.c \
+	$(LIBRARY_STM32)/stm32f4xx_rtc.c \
+	$(LIBRARY_STM32)/stm32f4xx_sdio.c \
+	$(LIBRARY_STM32)/stm32f4xx_spi.c \
+	$(LIBRARY_STM32)/stm32f4xx_syscfg.c \
+	$(LIBRARY_STM32)/stm32f4xx_tim.c \
+	$(LIBRARY_STM32)/stm32f4xx_usart.c \
+	$(LIBRARY_STM32)/stm32f4xx_wwdg.c \
 	$(LIBRARY_STM32)/syscalls.c
 
 CSRC = $(PLATFORM_SRC)
@@ -105,7 +105,7 @@ CSRC += $(BASIC_SRC)
 CSRC += $(BACNET_SRC)
 CSRC += $(STM32_SRC)
 
-ASRC = $(LIBRARY_CMSIS)/gcc_ride7/startup_stm32f10x_xl.s
+ASRC = $(LIBRARY_CMSIS)/gcc_ride7/startup_stm32f4xx.s
 
 #Set the toolchain command names (only the ones needed are defined)
 PREFIX ?= arm-none-eabi-
@@ -116,14 +116,12 @@ OBJDUMP = $(PREFIX)objdump
 AR = $(PREFIX)ar
 SIZE = $(PREFIX)size
 
-LDSCRIPT = $(PLATFORM_DIR)/stm32f10x.ld
+LDSCRIPT = $(PLATFORM_DIR)/stm32f4xx.ld
 
-MCU_FLAGS = -mcpu=cortex-m3
+MCU_FLAGS = -mcpu=cortex-m4
 MCU_FLAGS += -mthumb -mabi=aapcs
 MCU_FLAGS += -mno-thumb-interwork
 MCU_FLAGS += -DUSE_STDPERIPH_DRIVER
-MCU_FLAGS += -DSTM32F10X_CL
-MCU_FLAGS += -DHSE_VALUE=25000000
 
 OPTIMIZE_FLAGS := -Os -ggdb
 OPTIMIZE_FLAGS += -DNDEBUG

@@ -23,84 +23,33 @@
  *
  *************************************************************************/
 
-#include <stdbool.h>
-#include <stdint.h>
-#include "hardware.h"
-#include "bacnet/basic/sys/mstimer.h"
+/**** From STM32 *****************
+ * #include <stdbool.h>
+ * #include <stdint.h>
+ * #include "hardware.h"
+ * #include "stm32f4xx.h"
+ * #include "stm32f4xx_pwr.h"
+ * #include "stm32f4xx_rcc.h"
+ * #include "system_stm32f4xx.h"
+*********************************/
+
+/**** Import ESP32 modules ****/
+ /** Free RTOS **/
+  #include "freertos/FreeRTOS.h"
+  #include "freertos/task.h"
+  #include "freertos/event_groups.h"
+ 
+ /** Other **/
+  #include "esp_log.h"
+  #include "nvs_flash.h"
+/***************************************/
+
+
+
 #include "bacnet/basic/sys/mstimer.h"
 #include "rs485.h"
 #include "led.h"
 #include "bacnet.h"
-
-/* local version override */
-char *BACnet_Version = "1.0";
-
-#ifdef USE_FULL_ASSERT
-
-/**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-    /* User can add his own implementation to report the file name and line
-       number, ex: printf("Wrong parameters value: file %s on line %d\r\n",
-       file, line) */
-
-    /* Infinite loop */
-    while (1) { }
-}
-#endif
-
-/* Private define ------------------------------------------------------------*/
-#define LSE_FAIL_FLAG 0x80
-#define LSE_PASS_FLAG 0x100
-
-void lse_init(void)
-{
-    uint32_t LSE_Delay = 0;
-    struct mstimer Delay_Timer;
-
-    /* Enable access to the backup register => LSE can be enabled */
-    PWR_BackupAccessCmd(ENABLE);
-    /* Enable LSE (Low Speed External Oscillation) */
-    RCC_LSEConfig(RCC_LSE_ON);
-
-    /* Check the LSE Status */
-    while (1) {
-        if (LSE_Delay < LSE_FAIL_FLAG) {
-            mstimer_set(&Delay_Timer, 0);
-            while (mstimer_elapsed(&Delay_Timer) < 500) {
-                /* do nothing */
-            }
-            /* check whether LSE is ready, with 4 seconds timeout */
-            LSE_Delay += 0x10;
-            if (RCC_GetFlagStatus(RCC_FLAG_LSERDY) != RESET) {
-                /* Set flag: LSE PASS */
-                LSE_Delay |= LSE_PASS_FLAG;
-                led_ld4_off();
-                /* Disable LSE */
-                RCC_LSEConfig(RCC_LSE_OFF);
-                break;
-            }
-        }
-
-        /* LSE_FAIL_FLAG = 0x80 */
-        else if (LSE_Delay >= LSE_FAIL_FLAG) {
-            if (RCC_GetFlagStatus(RCC_FLAG_LSERDY) == RESET) {
-                /* Set flag: LSE FAIL */
-                LSE_Delay |= LSE_FAIL_FLAG;
-                led_ld4_on();
-            }
-            /* Disable LSE */
-            RCC_LSEConfig(RCC_LSE_OFF);
-            break;
-        }
-    }
-}
 
 int main(void)
 {
@@ -108,23 +57,24 @@ int main(void)
 
     /*At this stage the microcontroller clock setting is already configured,
        this is done through SystemInit() function which is called from startup
-       file (startup_stm32f10x_xx.s) before to branch to application main.
+       file (startup_stm32f4xx.s) before to branch to application main.
        To reconfigure the default setting of SystemInit() function, refer to
-       system_stm32f10x.c file */
+       system_stm32f4xx.c file */
+    SystemCoreClockUpdate();
+    /* enable some clocks - USART and GPIO clocks are enabled in our drivers */
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB |
-            RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOE,
-        ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+    /* enable our hardware */
     mstimer_init();
-    lse_init();
     led_init();
+    rs485_init();
     bacnet_init();
     mstimer_set(&Blink_Timer, 125);
     for (;;) {
         if (mstimer_expired(&Blink_Timer)) {
             mstimer_reset(&Blink_Timer);
-            led_ld3_toggle();
+            led_toggle(LED_LD3);
+            led_toggle(LED_RS485);
         }
         led_task();
         bacnet_task();

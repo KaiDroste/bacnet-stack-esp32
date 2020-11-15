@@ -25,7 +25,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 /* hardware layer includes */
-#include "hardware.h"
 #include "bacnet/basic/sys/mstimer.h"
 #include "rs485.h"
 /* BACnet Stack includes */
@@ -48,7 +47,7 @@ static struct mstimer DCC_Timer;
 
 void bacnet_init(void)
 {
-    dlmstp_set_mac_address(255);
+    dlmstp_set_mac_address(2);
     dlmstp_set_max_master(127);
     /* initialize datalink layer */
     dlmstp_init(NULL);
@@ -79,61 +78,19 @@ void bacnet_init(void)
     Send_I_Am(&Handler_Transmit_Buffer[0]);
 }
 
-/** Static receive buffer, initialized with zeros by the C Library Startup Code. */
-
-static uint8_t PDUBuffer[MAX_MPDU + 16 /* Add a little safety margin to the buffer,
-                                        * so that in the rare case, the message
-                                        * would be filled up to MAX_MPDU and some
-                                        * decoding functions would overrun, these
-                                        * decoding functions will just end up in
-                                        * a safe field of static zeros. */];
-
-/** BACnet task handling receiving and transmitting of messages.  */
-
+static uint8_t PDUBuffer[MAX_MPDU];
 void bacnet_task(void)
 {
     uint16_t pdu_len;
     BACNET_ADDRESS src; /* source address */
-    uint8_t i;
-    BACNET_BINARY_PV binary_value = BINARY_INACTIVE;
-    BACNET_POLARITY polarity;
-    bool out_of_service;
 
-    /* Binary Output */
-    for (i = 0; i < MAX_BINARY_OUTPUTS; i++) {
-        out_of_service = Binary_Output_Out_Of_Service(i);
-        if (!out_of_service) {
-            binary_value = Binary_Output_Present_Value(i);
-            polarity = Binary_Output_Polarity(i);
-            if (polarity != POLARITY_NORMAL) {
-                if (binary_value == BINARY_ACTIVE) {
-                    binary_value = BINARY_INACTIVE;
-                } else {
-                    binary_value = BINARY_ACTIVE;
-                }
-            }
-            if (binary_value == BINARY_ACTIVE) {
-                if (i == 0) {
-                    /* led_on(LED_2); */
-                } else {
-                    /* led_on(LED_3); */
-                }
-            } else {
-                if (i == 0) {
-                    /* led_off(LED_2); */
-                } else {
-                    /* led_off(LED_3); */
-                }
-            }
-        }
-    }
     /* handle the communication timer */
     if (mstimer_expired(&DCC_Timer)) {
         mstimer_reset(&DCC_Timer);
         dcc_timer_seconds(DCC_CYCLE_SECONDS);
     }
     /* handle the messaging */
-    pdu_len = datalink_receive(&src, &PDUBuffer[0], MAX_MPDU, 0);
+    pdu_len = dlmstp_receive(&src, &PDUBuffer[0], sizeof(PDUBuffer), 0);
     if (pdu_len) {
         npdu_handler(&src, &PDUBuffer[0], pdu_len);
     }
