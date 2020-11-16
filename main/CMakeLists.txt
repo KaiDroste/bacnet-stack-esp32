@@ -1,13 +1,16 @@
 set(COMPONENT_SRCS "main.c"
-                   "port/device.c"
-				   "port/bo.c"
-				   "port/rs485.c" #Kai
-				   "port/dlmstp.c" # Kai 
-				   #"port/bip_init.c" # For BACnet IP
-				   #"port/ai.c"
 
 				   "port/bacnet.c"
+                   "port/device.c"
+				   "port/dlmstp.c" # Kai 
 				   "port/led.c"
+
+				   "port/rs485.c" #Kai
+
+				   
+				   # "port/bo.c"
+				   # "port/bip_init.c" # For BACnet IP
+				   # "port/ai.c"
 
 				   "bacnet/dcc.c"
 				   "bacnet/basic/binding/address.c"
