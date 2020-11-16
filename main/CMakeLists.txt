@@ -4,7 +4,8 @@ set(COMPONENT_SRCS "main.c"
                    "port/device.c"
 				   "port/dlmstp.c" # Kai 
 				   "port/led.c"
-
+				   "port/mstimer-init.c"
+				   "port/netport.c"
 				   "port/rs485.c" #Kai
 
 				   
@@ -51,11 +52,10 @@ set(COMPONENT_SRCS "main.c"
 				   "bacnet/basic/npdu/h_npdu.c"
 
 				   "bacnet/basic/sys/ringbuf.c"
-				   "port/automac.c"
+				   # "port/automac.c"
 				   "bacnet/basic/sys/mstimer.c"
 				   "bacnet/basic/sys/fifo.c"
 				   "bacnet/datalink/crc.c"
-				   "port/mstimer-init.c"
 				   "bacnet/basic/service/h_whohas.c"
 				   "bacnet/basic/service/h_rd.c"
 				   "bacnet/basic/service/h_dcc.c"

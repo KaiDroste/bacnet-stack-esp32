@@ -54,16 +54,16 @@ int main(void)
 {
     struct mstimer Blink_Timer;
 
-    /*At this stage the microcontroller clock setting is already configured,
-       this is done through SystemInit() function which is called from startup
-       file (startup_stm32f4xx.s) before to branch to application main.
-       To reconfigure the default setting of SystemInit() function, refer to
-       system_stm32f4xx.c file */
-    SystemCoreClockUpdate();
-    /* enable some clocks - USART and GPIO clocks are enabled in our drivers */
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-    /* enable our hardware */
+    // /*At this stage the microcontroller clock setting is already configured,
+    //    this is done through SystemInit() function which is called from startup
+    //    file (startup_stm32f4xx.s) before to branch to application main.
+    //    To reconfigure the default setting of SystemInit() function, refer to
+    //    system_stm32f4xx.c file */
+    // SystemCoreClockUpdate();
+    // /* enable some clocks - USART and GPIO clocks are enabled in our drivers */
+    // RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    // RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+    // /* enable our hardware */
     mstimer_init();
     led_init();
     rs485_init();

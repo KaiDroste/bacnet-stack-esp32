@@ -35,6 +35,9 @@
 #include "bacnet/basic/tsm/tsm.h"
 #include "bacnet/dcc.h"
 #include "bacnet/iam.h"
+/* Modules which were not included in stm32 build */
+/* MS/TP specific */
+#include "bacnet/datalink/dlmstp.h"
 /* BACnet objects */
 #include "bacnet/basic/object/device.h"
 #include "bacnet/basic/object/bo.h"
