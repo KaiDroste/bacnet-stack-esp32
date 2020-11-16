@@ -29,8 +29,12 @@
 #include <stdint.h>
 #include "bacnet/basic/sys/mstimer.h"
 #include "bacnet/basic/sys/debug.h"
-#include "stm32f4xx.h"
+// #include "stm32f4xx.h"
 #include "led.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/gpio.h"
 
 /* counter for the various timers */
 static volatile unsigned long Millisecond_Counter;
@@ -73,7 +77,8 @@ void SysTick_Handler(void)
  */
 unsigned long mstimer_now(void)
 {
-    return Millisecond_Counter;
+    // return Millisecond_Counter;
+    return esp_timer_get_time()/1000;
 }
 
 /**
@@ -115,11 +120,32 @@ void mstimer_callback(struct mstimer_callback_data_t *new_cb,
  */
 void mstimer_init(void)
 {
-    /* Setup SysTick Timer for 1ms interrupts  */
-    if (SysTick_Config(SystemCoreClock / 1000)) {
-        /* Capture error */
-        while (1)
-            ;
+    //Setup simple timer
+
+    uint32_t tickcount=xTaskGetTickCount();
+
+    while (true)
+    {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+        uint32_t newtick=xTaskGetTickCount();
+
+        // one second elapse at least (maybe much more if Wifi was disconnected for a long)
+            if ((newtick<tickcount)||((newtick-tickcount)>=configTICK_RATE_HZ))
+            {
+                tickcount=newtick;
+                SysTick_Handler();
+            }
     }
-    NVIC_EnableIRQ(SysTick_IRQn);
+
+
+
+
+    /*** STM32 ****/
+    // /* Setup SysTick Timer for 1ms interrupts  */
+    // if (SysTick_Config(SystemCoreClock / 1000)) {
+    //     /* Capture error */
+    //     while (1)
+    //         ;
+    // }
+    // NVIC_EnableIRQ(SysTick_IRQn);
 }
