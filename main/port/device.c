@@ -36,6 +36,7 @@
 #include "bacnet/datalink/datalink.h"
 #include "bacnet/version.h"
 #include "bacnet/basic/services.h"
+#include "bacnet/datalink/dlmstp.h"
 /* objects */
 #include "bacnet/basic/object/netport.h"
 #include "bacnet/basic/object/device.h"
@@ -67,7 +68,7 @@ static struct my_object_functions {
         Network_Port_Write_Property, Network_Port_Property_Lists },
     {
 #endif
-        MAX_BACNET_OBJECT_TYPE, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
+        MAX_BACNET_OBJECT_TYPE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL } };
 
 /* note: you really only need to define variables for
    properties that are writable or that may change.

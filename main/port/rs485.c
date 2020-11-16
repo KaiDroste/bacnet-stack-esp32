@@ -35,6 +35,7 @@
 *********************************/
 /**** Import ESP32 modules ****/
  /** Free RTOS **/
+  #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
  /** Other **/
   #include "driver/uart.h"
@@ -129,57 +130,57 @@ bool rs485_receive_error(void)
     return false;
 }
 
-/**
- * @brief USARTx interrupt handler sub-routine
- */
-void USART6_IRQHandler(void)
-{
-    uint8_t data_byte;
+// /**
+//  * @brief USARTx interrupt handler sub-routine
+//  */
+// void USART6_IRQHandler(void)
+// {
+//     uint8_t data_byte;
 
-    if (USART_GetITStatus(USART6, USART_IT_RXNE) != RESET) {
-        /* Read one byte from the receive data register */
-        data_byte = USART_ReceiveData(USART6);
-        if (!Transmitting) {
-            FIFO_Put(&Receive_Queue, data_byte);
-            RS485_Receive_Bytes++;
-        }
-        USART_ClearITPendingBit(USART6, USART_IT_RXNE);
-    }
-    if (USART_GetITStatus(USART6, USART_IT_TXE) != RESET) {
-        if (FIFO_Count(&Transmit_Queue)) {
-            USART_SendData(USART6, FIFO_Get(&Transmit_Queue));
-            RS485_Transmit_Bytes += 1;
-            rs485_silence_reset();
-        } else {
-            /* disable the USART to generate interrupts on TX empty */
-            USART_ITConfig(USART6, USART_IT_TXE, DISABLE);
-            /* enable the USART to generate interrupts on TX complete */
-            USART_ITConfig(USART6, USART_IT_TC, ENABLE);
-        }
-        USART_ClearITPendingBit(USART6, USART_IT_TXE);
-    }
-    if (USART_GetITStatus(USART6, USART_IT_TC) != RESET) {
-        rs485_rts_enable(false);
-        /* disable the USART to generate interrupts on TX complete */
-        USART_ITConfig(USART6, USART_IT_TC, DISABLE);
-        /* enable the USART to generate interrupts on RX not empty */
-        USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
-        USART_ClearITPendingBit(USART6, USART_IT_TC);
-    }
-    /* check for errors and clear them */
-    if (USART_GetFlagStatus(USART6, USART_FLAG_ORE) == SET) {
-        USART_ClearFlag(USART6, USART_FLAG_ORE);
-    }
-    if (USART_GetFlagStatus(USART6, USART_FLAG_NE) == SET) {
-        USART_ClearFlag(USART6, USART_FLAG_NE);
-    }
-    if (USART_GetFlagStatus(USART6, USART_FLAG_FE) == SET) {
-        USART_ClearFlag(USART6, USART_FLAG_FE);
-    }
-    if (USART_GetFlagStatus(USART6, USART_FLAG_PE) == SET) {
-        USART_ClearFlag(USART6, USART_FLAG_PE);
-    }
-}
+//     if (USART_GetITStatus(USART6, USART_IT_RXNE) != RESET) {
+//         /* Read one byte from the receive data register */
+//         data_byte = USART_ReceiveData(USART6);
+//         if (!Transmitting) {
+//             FIFO_Put(&Receive_Queue, data_byte);
+//             RS485_Receive_Bytes++;
+//         }
+//         USART_ClearITPendingBit(USART6, USART_IT_RXNE);
+//     }
+//     if (USART_GetITStatus(USART6, USART_IT_TXE) != RESET) {
+//         if (FIFO_Count(&Transmit_Queue)) {
+//             USART_SendData(USART6, FIFO_Get(&Transmit_Queue));
+//             RS485_Transmit_Bytes += 1;
+//             rs485_silence_reset();
+//         } else {
+//             /* disable the USART to generate interrupts on TX empty */
+//             USART_ITConfig(USART6, USART_IT_TXE, DISABLE);
+//             /* enable the USART to generate interrupts on TX complete */
+//             USART_ITConfig(USART6, USART_IT_TC, ENABLE);
+//         }
+//         USART_ClearITPendingBit(USART6, USART_IT_TXE);
+//     }
+//     if (USART_GetITStatus(USART6, USART_IT_TC) != RESET) {
+//         rs485_rts_enable(false);
+//         /* disable the USART to generate interrupts on TX complete */
+//         USART_ITConfig(USART6, USART_IT_TC, DISABLE);
+//         /* enable the USART to generate interrupts on RX not empty */
+//         USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
+//         USART_ClearITPendingBit(USART6, USART_IT_TC);
+//     }
+//     /* check for errors and clear them */
+//     if (USART_GetFlagStatus(USART6, USART_FLAG_ORE) == SET) {
+//         USART_ClearFlag(USART6, USART_FLAG_ORE);
+//     }
+//     if (USART_GetFlagStatus(USART6, USART_FLAG_NE) == SET) {
+//         USART_ClearFlag(USART6, USART_FLAG_NE);
+//     }
+//     if (USART_GetFlagStatus(USART6, USART_FLAG_FE) == SET) {
+//         USART_ClearFlag(USART6, USART_FLAG_FE);
+//     }
+//     if (USART_GetFlagStatus(USART6, USART_FLAG_PE) == SET) {
+//         USART_ClearFlag(USART6, USART_FLAG_PE);
+//     }
+// }
 
 /**
  * @brief Control the DE and /RE pins on the RS-485 transceiver
@@ -266,7 +267,7 @@ static void rs485_baud_rate_configure(void)
         // .source_clk = UART_SCLK_APB,
     };
     ESP_LOGI(TAG, "Start Modem application test and configure UART.");
-    uart_driver_install(UART_NUM_1, BUF_SIZE * 2, 0, 0, NULL, 0);
+    uart_driver_install(UART_NUM_1, 1024 * 2, 0, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart1_config);
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART1_TXD, UART1_RXD, UART1_RTS, UART_PIN_NO_CHANGE));
     ESP_ERROR_CHECK(uart_set_mode(UART_NUM_1, UART_MODE_RS485_HALF_DUPLEX));
@@ -334,7 +335,7 @@ void rs485_init(void)
     /** STM32 Structure **
      * GPIO_InitTypeDef GPIO_InitStructure;
      * NVIC_InitTypeDef NVIC_InitStructure;
-     * /
+     * */
     
 
     /* initialize the Rx and Tx byte queues */
@@ -343,7 +344,7 @@ void rs485_init(void)
     FIFO_Init(&Transmit_Queue, &Transmit_Queue_Data[0],
         (unsigned)sizeof(Transmit_Queue_Data));
 
-    // /** STM32 Structure **
+    // /** STM32 Structure **/
     // /* DFR0259 RS485 Shield - TXD=PG14, RXD=PG9, USART6 */
     // /* Enable GPIOx clock */
     // RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOG, ENABLE);

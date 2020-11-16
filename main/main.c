@@ -50,7 +50,7 @@
 #include "led.h"
 #include "bacnet.h"
 
-int main(void)
+int app_main(void)
 {
     struct mstimer Blink_Timer;
 
