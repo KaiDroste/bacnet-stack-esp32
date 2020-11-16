@@ -22,9 +22,25 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *********************************************************************/
 #include <stdint.h>
-#include "stm32f4xx.h"
+/**** From STM32 *****************
+ * #include "stm32f4xx.h"
+*********************************/
+
+/**** Import ESP32 modules ****/
+ /** Free RTOS **/
+ 
+ /** Other **/
+  #include "driver/gpio.h"
+  #include "esp_log.h"
+/***************************************/
 #include "bacnet/basic/sys/mstimer.h"
 #include "led.h"
+
+#define LD1 21      //0    
+#define LD2 22      //1
+#define LD3 23      //2
+#define LD4 02      //3 (RS485-LED) 
+
 
 static struct mstimer Off_Delay_Timer[LED_MAX];
 static bool LED_State[LED_MAX];
@@ -38,22 +54,22 @@ void led_on(unsigned index)
 {
     switch (index) {
         case LED_LD1:
-            GPIO_WriteBit(GPIOB, GPIO_Pin_0, Bit_SET);
+            gpio_set_level(LD1, 1);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = true;
             break;
         case LED_LD2:
-            GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_SET);
+            gpio_set_level(LD2, 1);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = true;
             break;
         case LED_LD3:
-            GPIO_WriteBit(GPIOB, GPIO_Pin_14, Bit_SET);
+            gpio_set_level(LD3, 1);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = true;
             break;
         case LED_RS485:
-            GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
+            gpio_set_level(LD4, 1);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = true;
             break;
@@ -71,22 +87,22 @@ void led_off(unsigned index)
 {
     switch (index) {
         case LED_LD1:
-            GPIO_WriteBit(GPIOB, GPIO_Pin_0, Bit_RESET);
+            gpio_set_level(LD1, 0);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = false;
             break;
         case LED_LD2:
-            GPIO_WriteBit(GPIOB, GPIO_Pin_7, Bit_RESET);
+            gpio_set_level(LD2, 0);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = false;
             break;
         case LED_LD3:
-            GPIO_WriteBit(GPIOB, GPIO_Pin_14, Bit_RESET);
+            gpio_set_level(LD3, 0);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = false;
             break;
         case LED_RS485:
-            GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
+            gpio_set_level(LD4, 0);
             mstimer_set(&Off_Delay_Timer[index], 0);
             LED_State[index] = false;
             break;
@@ -175,36 +191,50 @@ void led_task(void)
  *************************************************************************/
 void led_init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStructure;
-
-    /* NUCLEO board user LEDs */
-    /* Enable GPIOx clock */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-    /* start with fresh structure */
-    GPIO_StructInit(&GPIO_InitStructure);
-    /* Configure the LED on NUCLEO board */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_7 | GPIO_Pin_14;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-    /* RS485 shield user LED */
-    /* Enable GPIOx clock */
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-    /* start with fresh structure */
-    GPIO_StructInit(&GPIO_InitStructure);
-    /* Configure the LED on NUCLEO board */
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    /* Configure the Receive LED on MS/TP board */
+    gpio_pad_select_gpio(LD1);
+    gpio_set_direction(LD1, GPIO_MODE_OUTPUT);
+    /* Configure the Transmit LED on MS/TP board */
+    gpio_pad_select_gpio(LD2);
+    gpio_set_direction(LD2, GPIO_MODE_OUTPUT);
+    /* Configure the LD3 on Discovery board */
+    gpio_pad_select_gpio(LD3);
+    gpio_set_direction(LD3, GPIO_MODE_OUTPUT);
+    /* Configure the LD4 on Discovery board */
+    gpio_pad_select_gpio(LD4);
+    gpio_set_direction(LD4, GPIO_MODE_OUTPUT);
 
     led_off(LED_LD1);
     led_off(LED_LD2);
     led_off(LED_LD3);
     led_off(LED_RS485);
 }
+
+    // /*** STM32 Init LED ***
+    // GPIO_InitTypeDef GPIO_InitStructure;
+
+    // /* NUCLEO board user LEDs */
+    // /* Enable GPIOx clock */
+    // RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+    // /* start with fresh structure */
+    // GPIO_StructInit(&GPIO_InitStructure);
+    // /* Configure the LED on NUCLEO board */
+    // GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_7 | GPIO_Pin_14;
+    // GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    // GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    // GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    // GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    // GPIO_Init(GPIOB, &GPIO_InitStructure);
+
+    // /* RS485 shield user LED */
+    // /* Enable GPIOx clock */
+    // RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+    // /* start with fresh structure */
+    // GPIO_StructInit(&GPIO_InitStructure);
+    // /* Configure the LED on NUCLEO board */
+    // GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+    // GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+    // GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+    // GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+    // GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    // GPIO_Init(GPIOA, &GPIO_InitStructure);

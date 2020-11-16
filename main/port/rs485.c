@@ -51,8 +51,8 @@
 /** ESP32- Logging **/
 static const char *TAG = "RS485_initalize";
 
-#define UART1_TXD           (23)
-#define UART1_RXD           (22)
+#define UART1_TXD           (16)
+#define UART1_RXD           (17)
 #define UART1_RTS           (18)
 
 /* buffer for storing received bytes - size must be power of two */
