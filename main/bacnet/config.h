@@ -111,7 +111,7 @@
 /* Configure from 1..255 for number of outstanding confirmed */
 /* requests available. */
 #if !defined(MAX_TSM_TRANSACTIONS)
-#define MAX_TSM_TRANSACTIONS 255
+#define MAX_TSM_TRANSACTIONS 20
 #endif
 /* The address cache is used for binding to BACnet devices */
 /* The number of entries corresponds to the number of */
@@ -119,7 +119,7 @@
 /* If your device is a simple server and does not need to bind, */
 /* then you don't need to use this. */
 #if !defined(MAX_ADDRESS_CACHE)
-#define MAX_ADDRESS_CACHE 255
+#define MAX_ADDRESS_CACHE 5
 #endif
 
 /* some modules have debugging enabled using PRINT_ENABLED */
