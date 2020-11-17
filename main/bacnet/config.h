@@ -32,6 +32,17 @@
 
 /* Note: these defines can be defined in your makefile or project
    or here or not defined and defaults will be used */
+   /** Define Components from Makefile **/  // Should be in CMakelists.txt in the future
+#define BACDL_MSTP 1
+#define BACAPP_ALL
+#define MAX_APDU 480
+#define BIG_ENDIAN 0
+#define MAX_TSM_TRANSACTIONS 0
+#define MAX_CHARACTER_STRING_BYTES 64
+#define MAX_OCTET_STRING_BYTES 64
+
+#define PRINT_ENABLED 1
+
 
 /* declare a single physical layer using your compiler define.
    see datalink.h for possible defines. */
@@ -111,7 +122,7 @@
 /* Configure from 1..255 for number of outstanding confirmed */
 /* requests available. */
 #if !defined(MAX_TSM_TRANSACTIONS)
-#define MAX_TSM_TRANSACTIONS 20
+#define MAX_TSM_TRANSACTIONS 255
 #endif
 /* The address cache is used for binding to BACnet devices */
 /* The number of entries corresponds to the number of */
@@ -119,7 +130,7 @@
 /* If your device is a simple server and does not need to bind, */
 /* then you don't need to use this. */
 #if !defined(MAX_ADDRESS_CACHE)
-#define MAX_ADDRESS_CACHE 5
+#define MAX_ADDRESS_CACHE 255
 #endif
 
 /* some modules have debugging enabled using PRINT_ENABLED */
