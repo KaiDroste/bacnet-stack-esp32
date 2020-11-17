@@ -64,7 +64,7 @@ int app_main(void)
     // RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
     // RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
     // /* enable our hardware */
-    mstimer_init();
+    // mstimer_init();
     led_init();
     rs485_init();
     bacnet_init();

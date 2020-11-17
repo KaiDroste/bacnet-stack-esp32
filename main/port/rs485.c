@@ -37,6 +37,7 @@
  /** Free RTOS **/
   #include "freertos/FreeRTOS.h"
   #include "freertos/task.h"
+  #include "freertos/queue.h"
  /** Other **/
   #include "driver/uart.h"
   #include "driver/gpio.h"
@@ -55,6 +56,11 @@ static const char *TAG = "RS485_initalize";
 #define UART1_RXD           (16)
 #define UART1_TXD           (17)
 #define UART1_RTS           (18)
+
+#define BUF_SIZE            (512)
+#define RD_BUF_SIZE         (BUF_SIZE)
+// #define PACKET_READ_TICS    (500 / portTICK_RATE_MS) 
+static QueueHandle_t uart_queue;
 
 /* buffer for storing received bytes - size must be power of two */
 /* BACnet MAX_MPDU for MS/TP is 501 bytes */
@@ -130,6 +136,87 @@ bool rs485_receive_error(void)
     return false;
 }
 
+/*************************************************************************
+ * DESCRIPTION: Reads the uart bytes
+ * RETURN:      true if a byte is available, with the byte in the parameter
+ * NOTES:       none
+ **************************************************************************/
+void uart_event_task()
+{
+    // size_t buffered_size;
+    uart_event_t event;
+    uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
+    uint8_t data_byte;
+    for(;;) {
+        //Waiting for UART event.
+        if( uart_queue != 0 )
+        {
+        if(xQueueReceive(uart_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
+            bzero(dtmp, RD_BUF_SIZE);
+            ESP_LOGV(TAG, "uart[%d] event:", UART_NUM_2);
+            switch(event.type) {
+                //Event of UART receving data
+                /*We'd better handler data event fast, there would be much more data events than
+                other types of events. If we take too much time on data event, the queue might
+                be full.*/
+                case UART_DATA:
+                    ESP_LOGV(TAG, "[UART DATA]: %d", event.size);
+                    const uint8_t len =  uart_read_bytes(UART_NUM_2, dtmp, event.size, portMAX_DELAY);
+                   // memcpy(data_byte, dtmp, event.size);
+                    // data_byte = dtmp;
+                    ESP_LOG_BUFFER_HEX(TAG, dtmp, event.size);
+                    for (int i = 0; i < len; i++) {
+                    data_byte = dtmp[i];
+                    (void)FIFO_Put(&Receive_Queue, data_byte);
+                    }
+                     
+                    break;
+                //Event of HW FIFO overflow detected
+                case UART_FIFO_OVF:
+                    ESP_LOGV(TAG, "hw fifo overflow");
+                    // If fifo overflow happened, you should consider adding flow control for your application.
+                    // The ISR has already reset the rx FIFO,
+                    // As an example, we directly flush the rx buffer here in order to read more data.
+                    uart_flush_input(UART_NUM_2);
+                    xQueueReset(uart_queue);
+                    break;
+                //Event of UART ring buffer full
+                case UART_BUFFER_FULL:
+                    ESP_LOGV(TAG, "ring buffer full");
+                    // If buffer full happened, you should consider encreasing your buffer size
+                    // As an example, we directly flush the rx buffer here in order to read more data.
+                    uart_flush_input(UART_NUM_2);
+                    xQueueReset(uart_queue);
+                    break;
+                //Event of UART RX break detected
+                case UART_BREAK:
+                    ESP_LOGV(TAG, "uart rx break");
+                    break;
+                //Event of UART parity check error
+                case UART_PARITY_ERR:
+                    ESP_LOGV(TAG, "uart parity error");
+                    break;
+                //Event of UART frame error
+                case UART_FRAME_ERR:
+                    ESP_LOGV(TAG, "uart frame error");
+                    break;
+                //UART_PATTERN_DET
+                case UART_PATTERN_DET:
+                    ESP_LOGV(TAG, "detect pattern. No pattern set");
+                    break;
+                //Others
+                default:
+                    ESP_LOGV(TAG, "uart event type: %d", event.type);
+                    break;
+            }
+        }}
+    }
+    free(dtmp);
+    dtmp = NULL;
+    vTaskDelete(NULL);
+}
+
+
 // /**
 //  * @brief USARTx interrupt handler sub-routine
 //  */
@@ -190,9 +277,9 @@ void rs485_rts_enable(bool enable)
 {
     Transmitting = enable;
     if (Transmitting) {
-        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,1));
+        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_2,1));
     } else {
-        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_1,0));
+        ESP_ERROR_CHECK(uart_set_rts(UART_NUM_2,0));
     }
 }
 
@@ -267,10 +354,13 @@ static void rs485_baud_rate_configure(void)
         // .source_clk = UART_SCLK_APB,
     };
     ESP_LOGI(TAG, "Start Modem application test and configure UART.");
-    uart_driver_install(UART_NUM_1, 1024 * 2, 0, 0, NULL, 0);
-    uart_param_config(UART_NUM_1, &uart1_config);
-    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART1_TXD, UART1_RXD, UART1_RTS, UART_PIN_NO_CHANGE));
-    ESP_ERROR_CHECK(uart_set_mode(UART_NUM_1, UART_MODE_RS485_HALF_DUPLEX));
+    uart_driver_install(UART_NUM_2, 1024 * 2, 0, 0, NULL, 0);
+    uart_param_config(UART_NUM_2, &uart1_config);
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART1_TXD, UART1_RXD, UART1_RTS, UART_PIN_NO_CHANGE));
+    ESP_ERROR_CHECK(uart_set_mode(UART_NUM_2, UART_MODE_RS485_HALF_DUPLEX));
+
+    //Reads uart and puts data to FIFO Buffer
+    xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, NULL);
 }
 
 /**
