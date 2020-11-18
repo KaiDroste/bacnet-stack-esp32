@@ -51,7 +51,7 @@
 #include "rs485.h"
 
 /** ESP32- Logging **/
-static const char *TAG = "RS485_initalize";
+static const char *TAG = "RS485";
 
 #define UART1_RXD           (16)
 #define UART1_TXD           (17)
@@ -149,8 +149,6 @@ void uart_event_task()
     uint8_t data_byte;
     for(;;) {
         //Waiting for UART event.
-        if( uart_queue != 0 )
-        {
         if(xQueueReceive(uart_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
             bzero(dtmp, RD_BUF_SIZE);
             ESP_LOGV(TAG, "uart[%d] event:", UART_NUM_2);
@@ -209,7 +207,7 @@ void uart_event_task()
                     ESP_LOGV(TAG, "uart event type: %d", event.type);
                     break;
             }
-        }}
+        }
     }
     free(dtmp);
     dtmp = NULL;
@@ -354,8 +352,8 @@ static void rs485_baud_rate_configure(void)
         // .source_clk = UART_SCLK_APB,
     };
     ESP_LOGI(TAG, "Start Modem application test and configure UART.");
-    uart_driver_install(UART_NUM_2, 1024 * 2, 0, 0, NULL, 0);
-    uart_param_config(UART_NUM_2, &uart1_config);
+    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, BUF_SIZE * 2, 0, 20, &uart_queue, 0));
+    ESP_ERROR_CHECK(uart_param_config(UART_NUM_2, &uart1_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART1_TXD, UART1_RXD, UART1_RTS, UART_PIN_NO_CHANGE));
     ESP_ERROR_CHECK(uart_set_mode(UART_NUM_2, UART_MODE_RS485_HALF_DUPLEX));
 
