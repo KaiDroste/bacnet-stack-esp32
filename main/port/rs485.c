@@ -481,6 +481,6 @@ void rs485_init(void)
     rs485_baud_rate_set(Baud_Rate);
 
     // USART_Cmd(USART6, ENABLE);
-
+    rs485_rts_enable(false);
     rs485_silence_reset();
 }
