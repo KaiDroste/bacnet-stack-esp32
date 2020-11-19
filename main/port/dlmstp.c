@@ -448,12 +448,13 @@ static void MSTP_Receive_Frame_FSM(void)
         case MSTP_RECEIVE_STATE_PREAMBLE:
             /* In the PREAMBLE state, the node waits for the
                second octet of the preamble. */
-            if (rs485_silence_elapsed(Tframe_abort)) {
-                /* Timeout */
-                /* a correct preamble has not been received */
-                /* wait for the start of a frame. */
-                Receive_State = MSTP_RECEIVE_STATE_IDLE;
-            } else if (rs485_receive_error()) {
+            // if (rs485_silence_elapsed(Tframe_abort)) {
+            //     /* Timeout */
+            //     /* a correct preamble has not been received */
+            //     /* wait for the start of a frame. */
+            //     Receive_State = MSTP_RECEIVE_STATE_IDLE;
+            // } 
+            if (rs485_receive_error()) {
                 /* Error */
                 rs485_silence_reset();
                 INCREMENT_AND_LIMIT_UINT8(EventCount);
